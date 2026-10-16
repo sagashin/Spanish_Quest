@@ -1,0 +1,744 @@
+// Vamos! Quest - Seed Data (Phrases, Stages, Roleplay Scenarios, Ranks)
+window.VAMOS_DATA = {
+  categories: [
+    {
+      id: 'greetings',
+      name: '挨拶・基本',
+      subtitle: 'まずは笑顔で第一声！友達づくりの基本フレーズ',
+      icon: 'HandMetal',
+      color: 'from-amber-500 to-orange-600',
+      badgeBg: 'bg-amber-500/20 text-amber-300 border-amber-500/40',
+      accent: '#f59e0b'
+    },
+    {
+      id: 'soccer',
+      name: 'サッカー・交流',
+      subtitle: 'ピッチの上は言葉を超える！同年代と熱く繋がる一言',
+      icon: 'Trophy',
+      color: 'from-red-600 to-rose-600',
+      badgeBg: 'bg-red-500/20 text-red-300 border-red-500/40',
+      accent: '#ef4444'
+    },
+    {
+      id: 'food',
+      name: '食事・買い物',
+      subtitle: '本場のバルやショップで自分の力で注文しよう！',
+      icon: 'Utensils',
+      color: 'from-emerald-500 to-teal-600',
+      badgeBg: 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40',
+      accent: '#10b981'
+    },
+    {
+      id: 'travel',
+      name: '移動・サバイバル',
+      subtitle: '街歩きやピンチの時もこれを知っていれば安心！',
+      icon: 'Compass',
+      color: 'from-sky-500 to-blue-600',
+      badgeBg: 'bg-sky-500/20 text-sky-300 border-sky-500/40',
+      accent: '#0ea5e9'
+    }
+  ],
+
+  ranks: [
+    { minPct: 0,  title: 'ルーキー旅行者',       enTitle: 'Rookie Traveler',    badge: '🎒', desc: 'スペインへの第一歩を踏み出したばかり！まずは挨拶から始めよう。' },
+    { minPct: 15, title: 'マドリードの散策者',   enTitle: 'City Explorer',      badge: '👟', desc: '基本フレーズをキャッチ！街中で少しずつ声を出せるレベル。' },
+    { minPct: 35, title: 'バルの常連',           enTitle: 'Tapas Regular',      badge: '🥖', desc: '注文や買い物もバッチリ！現地のご飯を120%楽しめるぞ。' },
+    { minPct: 60, title: 'ユースのムードメーカー', enTitle: 'Team Sparkplug',     badge: '⚡', desc: '現地の13歳とも笑顔でパス交換＆会話ができる頼もしい存在！' },
+    { minPct: 85, title: 'ピッチの司令塔',       enTitle: 'Maestro del Campo',  badge: '👑', desc: 'スペイン渡航準備は完璧！現地でも堂々とコミュニケーションできる！' }
+  ],
+
+  phrases: [
+    // ==================== 1. 挨拶・基本 (greetings) ====================
+    {
+      id: 'gr_1',
+      category: 'greetings',
+      stage: 1,
+      spanish: '¡Hola! ¿Qué tal?',
+      kana: 'オラ！ ケ タル？',
+      japanese: 'やあ！調子はどう？',
+      chunks: ['¡Hola!', '¿Qué', 'tal?'],
+      distractors: ['Dónde', 'favor'],
+      wordRubies: { '¡Hola!': 'オラ', '¿Qué': 'ケ', 'tal?': 'タル', 'Dónde': 'ドンデ', 'favor': 'ファボール' },
+      tip: 'スペインでは朝でも夜でも、友達に会ったらまず「¡Hola!（オラ！）」。hは発音しないのがポイント！'
+    },
+    {
+      id: 'gr_2',
+      category: 'greetings',
+      stage: 1,
+      spanish: 'Soy de Japón.',
+      kana: 'ソイ デ ハポン',
+      japanese: '日本から来ました。',
+      chunks: ['Soy', 'de', 'Japón.'],
+      distractors: ['Muy', 'está'],
+      wordRubies: { 'Soy': 'ソイ', 'de': 'デ', 'Japón.': 'ハポン', 'Muy': 'ムイ', 'está': 'エスタ' },
+      tip: 'スペイン語の「J」はハ行の音になるから、Japónは「ジャポン」ではなく「ハポン」と発音するよ！'
+    },
+    {
+      id: 'gr_3',
+      category: 'greetings',
+      stage: 1,
+      spanish: 'Mucho gusto.',
+      kana: 'ムーチョ グスト',
+      japanese: 'はじめまして・よろしく。',
+      chunks: ['Mucho', 'gusto.'],
+      distractors: ['pase', 'bueno'],
+      wordRubies: { 'Mucho': 'ムーチョ', 'gusto.': 'グスト', 'pase': 'パセ', 'bueno': 'ブエノ' },
+      tip: '自己紹介のあとに握手やグータッチをしながら「Mucho gusto!」と言えば一気に距離が縮まる！'
+    },
+    {
+      id: 'gr_4',
+      category: 'greetings',
+      stage: 1,
+      spanish: 'Me llamo Leo.',
+      kana: 'メ ジャモ レオ',
+      japanese: '僕の名前はレオです。',
+      chunks: ['Me', 'llamo', 'Leo.'],
+      distractors: ['Soy', 'gusto'],
+      wordRubies: { 'Me': 'メ', 'llamo': 'ジャモ', 'Leo.': 'レオ', 'Soy': 'ソイ', 'gusto': 'グスト' },
+      tip: '「ll」はヤ行やジャ行の音。「Me llamo ＋ 自分の名前」でいつでも自己紹介できる！'
+    },
+    {
+      id: 'gr_5',
+      category: 'greetings',
+      stage: 2,
+      spanish: '¡Muchas gracias!',
+      kana: 'ムーチャス グラシアス！',
+      japanese: '本当にありがとう！',
+      chunks: ['¡Muchas', 'gracias!'],
+      distractors: ['por', 'favor'],
+      wordRubies: { '¡Muchas': 'ムーチャス', 'gracias!': 'グラシアス', 'por': 'ポル', 'favor': 'ファボール' },
+      tip: 'お礼を言うときは笑顔でこれ！もっとカジュアルなら「¡Gracias!」だけでもOK。'
+    },
+    {
+      id: 'gr_6',
+      category: 'greetings',
+      stage: 2,
+      spanish: 'Tengo trece años.',
+      kana: 'テンゴ トレセ アニョス',
+      japanese: '私は13歳です。',
+      chunks: ['Tengo', 'trece', 'años.'],
+      distractors: ['doce', 'Soy'],
+      wordRubies: { 'Tengo': 'テンゴ', 'trece': 'トレセ(13)', 'años.': 'アニョス(歳)', 'doce': 'ドセ(12)', 'Soy': 'ソイ' },
+      tip: '13は「trece（トレセ）」、14なら「catorce（カトルセ）」。同年代の友達に年齢を伝える必須フレーズ！'
+    },
+    {
+      id: 'gr_7',
+      category: 'greetings',
+      stage: 2,
+      spanish: '¡Qué guay!',
+      kana: 'ケ グアイ！',
+      japanese: 'めっちゃカッコいい！／最高！',
+      chunks: ['¡Qué', 'guay!'],
+      distractors: ['tal', 'mal'],
+      wordRubies: { '¡Qué': 'ケ', 'guay!': 'グアイ', 'tal': 'タル', 'mal': 'マル' },
+      tip: 'スペインのティーンエイジャーが毎日使う超定番スラング！英語の「Cool!」と同じ感覚で使えるよ。'
+    },
+    {
+      id: 'gr_8',
+      category: 'greetings',
+      stage: 2,
+      spanish: '¡Hasta luego!',
+      kana: 'アスタ ルエゴ！',
+      japanese: 'またね！',
+      chunks: ['¡Hasta', 'luego!'],
+      distractors: ['Hola', 'gracias'],
+      wordRubies: { '¡Hasta': 'アスタ', 'luego!': 'ルエゴ', 'Hola': 'オラ', 'gracias': 'グラシアス' },
+      tip: '練習後やお店を出るときに「またね！」と明るく手を振って言ってみよう。'
+    },
+
+    // ==================== 2. サッカー・交流 (soccer) ====================
+    {
+      id: 'sc_1',
+      category: 'soccer',
+      stage: 1,
+      spanish: '¡Vamos!',
+      kana: 'バモス！',
+      japanese: '行こうぜ！／よし！',
+      chunks: ['¡Vamos!'],
+      distractors: ['¡Hola!', 'Agua'],
+      wordRubies: { '¡Vamos!': 'バモス！', '¡Hola!': 'オラ！', 'Agua': 'アグア' },
+      tip: '試合開始、ゴールを決めた時、気合を入れる時、いつでも使えるスペイン最強の掛け声！VはBに近い音で！'
+    },
+    {
+      id: 'sc_2',
+      category: 'soccer',
+      stage: 1,
+      spanish: '¡Buen pase!',
+      kana: 'ブエン パセ！',
+      japanese: 'ナイスパス！',
+      chunks: ['¡Buen', 'pase!'],
+      distractors: ['gol', 'malo'],
+      wordRubies: { '¡Buen': 'ブエン', 'pase!': 'パセ', 'gol': 'ゴル', 'malo': 'マロ' },
+      tip: '味方から良いボールが来たら親指を立てて「¡Buen pase!」。すぐチームに溶け込める魔法の言葉！'
+    },
+    {
+      id: 'sc_3',
+      category: 'soccer',
+      stage: 1,
+      spanish: 'Pásamela, por favor.',
+      kana: 'パサメラ ポル ファボール',
+      japanese: 'パス出して！',
+      chunks: ['Pásamela,', 'por', 'favor.'],
+      distractors: ['cuenta', 'baño'],
+      wordRubies: { 'Pásamela,': 'パサメラ(パスして)', 'por': 'ポル', 'favor.': 'ファボール', 'cuenta': 'クエンタ', 'baño': 'バニョ' },
+      tip: '試合中は短く「¡Pásamela!（パサメラ！＝俺にパスして！）」や「¡Aquí!（アキ！＝ここ！）」と叫ぼう！'
+    },
+    {
+      id: 'sc_4',
+      category: 'soccer',
+      stage: 1,
+      spanish: '¡Golazo!',
+      kana: 'ゴラーソ！',
+      japanese: 'スーパーゴール！',
+      chunks: ['¡Golazo!'],
+      distractors: ['¡Vamos!', 'Baño'],
+      wordRubies: { '¡Golazo!': 'ゴラーソ！', '¡Vamos!': 'バモス！', 'Baño': 'バニョ' },
+      tip: '普通のゴールは「Gol（ゴル）」だけど、すごいシュートが決まったら「¡Golazo!（ゴラーソ！）」と叫んでハイタッチ！'
+    },
+    {
+      id: 'sc_5',
+      category: 'soccer',
+      stage: 2,
+      spanish: '¿De qué juegas?',
+      kana: 'デ ケ フエガス？',
+      japanese: 'ポジションどこ？',
+      chunks: ['¿De', 'qué', 'juegas?'],
+      distractors: ['dónde', 'cuesta'],
+      wordRubies: { '¿De': 'デ', 'qué': 'ケ', 'juegas?': 'フエガス', 'dónde': 'ドンデ', 'cuesta': 'クエスタ' },
+      tip: '初対面のサッカー仲間と話す鉄板フレーズ！答えるときは「Juego de medio（ミッドフィルダーだよ）」みたいに言える。'
+    },
+    {
+      id: 'sc_6',
+      category: 'soccer',
+      stage: 2,
+      spanish: '¿Podemos jugar juntos?',
+      kana: 'ポデモス フガール フントス？',
+      japanese: '一緒にサッカーしてもいい？',
+      chunks: ['¿Podemos', 'jugar', 'juntos?'],
+      distractors: ['comer', 'donde'],
+      wordRubies: { '¿Podemos': 'ポデモス', 'jugar': 'フガール(遊ぶ/プレーする)', 'juntos?': 'フントス(一緒に)', 'comer': 'コメール', 'donde': 'ドンデ' },
+      tip: '公園やピッチで同年代がボールを蹴っていたら、勇気を出してこの一言！きっと「¡Claro!（もちろん！）」と迎えてくれる。'
+    },
+    {
+      id: 'sc_7',
+      category: 'soccer',
+      stage: 2,
+      spanish: '¡Buena jugada!',
+      kana: 'ブエナ フガーダ！',
+      japanese: 'ナイスプレー！',
+      chunks: ['¡Buena', 'jugada!'],
+      distractors: ['agua', 'tarde'],
+      wordRubies: { '¡Buena': 'ブエナ', 'jugada!': 'フガーダ', 'agua': 'アグア', 'tarde': 'タルデ' },
+      tip: 'ドリブル突破やディフェンスが決まった時に味方を褒める最高の一言！'
+    },
+    {
+      id: 'sc_8',
+      category: 'soccer',
+      stage: 2,
+      spanish: '¡Bien jugado!',
+      kana: 'ビエン フガード！',
+      japanese: 'いい試合だったね！（GG!）',
+      chunks: ['¡Bien', 'jugado!'],
+      distractors: ['Mucho', 'cuesta'],
+      wordRubies: { '¡Bien': 'ビエン', 'jugado!': 'フガード', 'Mucho': 'ムーチョ', 'cuesta': 'クエスタ' },
+      tip: 'ミニゲームや練習が終わったあと、相手や味方と握手しながら言うスポーツマンシップの言葉（英語のGood game!）。'
+    },
+
+    // ==================== 3. 食事・買い物 (food) ====================
+    {
+      id: 'fd_1',
+      category: 'food',
+      stage: 1,
+      spanish: 'Agua, por favor.',
+      kana: 'アグア ポル ファボール',
+      japanese: '水をください。',
+      chunks: ['Agua,', 'por', 'favor.'],
+      distractors: ['Dónde', 'gusto'],
+      wordRubies: { 'Agua,': 'アグア(水)', 'por': 'ポル', 'favor.': 'ファボール(お願いします)', 'Dónde': 'ドンデ', 'gusto': 'グスト' },
+      tip: '「〇〇, por favor（ポル・ファボール）」は「〇〇をください」の黄金パターン！練習後の水分補給にも必須。'
+    },
+    {
+      id: 'fd_2',
+      category: 'food',
+      stage: 1,
+      spanish: 'Esto, por favor.',
+      kana: 'エスト ポル ファボール',
+      japanese: 'これをください。',
+      chunks: ['Esto,', 'por', 'favor.'],
+      distractors: ['Aquello', 'está'],
+      wordRubies: { 'Esto,': 'エスト(これ)', 'por': 'ポル', 'favor.': 'ファボール', 'Aquello': 'アケジョ', 'está': 'エスタ' },
+      tip: 'メニューやショーケースのパン・チュロスを指差しながら「Esto, por favor!」と言えばどんなお店でも注文できる！'
+    },
+    {
+      id: 'fd_3',
+      category: 'food',
+      stage: 1,
+      spanish: '¿Cuánto cuesta?',
+      kana: 'クアント クエスタ？',
+      japanese: 'いくらですか？',
+      chunks: ['¿Cuánto', 'cuesta?'],
+      distractors: ['Dónde', 'juegas'],
+      wordRubies: { '¿Cuánto': 'クアント(いくら)', 'cuesta?': 'クエスタ(値段がする)', 'Dónde': 'ドンデ', 'juegas': 'フエガス' },
+      tip: 'スタジアムのショップでユニフォームやグッズを買うときに大活躍するフレーズ！'
+    },
+    {
+      id: 'fd_4',
+      category: 'food',
+      stage: 1,
+      spanish: '¡Está riquísimo!',
+      kana: 'エスタ リキシモ！',
+      japanese: 'めちゃくちゃ美味しい！',
+      chunks: ['¡Está', 'riquísimo!'],
+      distractors: ['Soy', 'baño'],
+      wordRubies: { '¡Está': 'エスタ', 'riquísimo!': 'リキシモ(超おいしい)', 'Soy': 'ソイ', 'baño': 'バニョ' },
+      tip: 'パエリアや生ハム、チュロスを食べて感動したらお店の人やホストファミリーに伝えよう！すごく喜んでくれるよ。'
+    },
+    {
+      id: 'fd_5',
+      category: 'food',
+      stage: 2,
+      spanish: 'La cuenta, por favor.',
+      kana: 'ラ クエンタ ポル ファボール',
+      japanese: 'お会計お願いします。',
+      chunks: ['La', 'cuenta,', 'por', 'favor.'],
+      distractors: ['agua', 'donde'],
+      wordRubies: { 'La': 'ラ', 'cuenta,': 'クエンタ(会計)', 'por': 'ポル', 'favor.': 'ファボール', 'agua': 'アグア', 'donde': 'ドンデ' },
+      tip: 'スペインのバルやレストランはテーブル会計が多いよ。手で文字を書くジェスチャーをしながら言うとスマート！'
+    },
+    {
+      id: 'fd_6',
+      category: 'food',
+      stage: 2,
+      spanish: 'Quiero churros con chocolate.',
+      kana: 'キエロ チュロス コン チョコラテ',
+      japanese: 'ホットチョコ付きのチュロスが欲しいです。',
+      chunks: ['Quiero', 'churros', 'con', 'chocolate.'],
+      distractors: ['sin', 'baño'],
+      wordRubies: { 'Quiero': 'キエロ(欲しい)', 'churros': 'チュロス', 'con': 'コン(〜付き)', 'chocolate.': 'チョコラテ', 'sin': 'シン', 'baño': 'バニョ' },
+      tip: '本場スペインのチュロスは濃厚なホットチョコレートにディップして食べるのが定番！おやつに最高！'
+    },
+    {
+      id: 'fd_7',
+      category: 'food',
+      stage: 2,
+      spanish: 'Un zumo de naranja, por favor.',
+      kana: 'ウン スモ デ ナランハ ポル ファボール',
+      japanese: 'オレンジジュースを1つください。',
+      chunks: ['Un', 'zumo', 'de', 'naranja,', 'por', 'favor.'],
+      distractors: ['agua', 'cuenta'],
+      wordRubies: { 'Un': 'ウン(1つの)', 'zumo': 'スモ(ジュース)', 'de': 'デ', 'naranja,': 'ナランハ(オレンジ)', 'por': 'ポル', 'favor.': 'ファボール' },
+      tip: 'スペインのバルには搾りたてオレンジジュース（Zumo de naranja）が必ずある！太陽の恵みで超フレッシュ！'
+    },
+    {
+      id: 'fd_8',
+      category: 'food',
+      stage: 2,
+      spanish: '¿Tienen esta camiseta en talla M?',
+      kana: 'ティエネン エスタ カミセタ エン タジャ エメ？',
+      japanese: 'このユニフォームのMサイズはありますか？',
+      chunks: ['¿Tienen', 'esta', 'camiseta', 'en', 'talla', 'M?'],
+      distractors: ['agua', 'dónde'],
+      wordRubies: { '¿Tienen': 'ティエネン(ありますか)', 'esta': 'エスタ(この)', 'camiseta': 'カミセタ(シャツ/ユニ)', 'en': 'エン', 'talla': 'タジャ(サイズ)', 'M?': 'エメ(M)' },
+      tip: '公式メガストアでユニフォーム（camiseta）を探すときにそのまま使えるカッコいいフレーズ！Sは「エセ(S)」。'
+    },
+
+    // ==================== 4. 移動・サバイバル (travel) ====================
+    {
+      id: 'tr_1',
+      category: 'travel',
+      stage: 1,
+      spanish: '¿Dónde está el baño?',
+      kana: 'ドンデ エスタ エル バニョ？',
+      japanese: 'トイレはどこですか？',
+      chunks: ['¿Dónde', 'está', 'el', 'baño?'],
+      distractors: ['cuánto', 'gusto'],
+      wordRubies: { '¿Dónde': 'ドンデ(どこ)', 'está': 'エスタ(ある)', 'el': 'エル', 'baño?': 'バニョ(トイレ)', 'cuánto': 'クアント', 'gusto': 'グスト' },
+      tip: '「¿Dónde está 〇〇?（〇〇はどこですか？）」は最強の質問パターン！el baño（または el aseo）でトイレ！'
+    },
+    {
+      id: 'tr_2',
+      category: 'travel',
+      stage: 1,
+      spanish: 'Ayuda, por favor.',
+      kana: 'アユーダ ポル ファボール',
+      japanese: '助けてください。',
+      chunks: ['Ayuda,', 'por', 'favor.'],
+      distractors: ['Agua', 'Gracias'],
+      wordRubies: { 'Ayuda,': 'アユーダ(助け)', 'por': 'ポル', 'favor.': 'ファボール', 'Agua': 'アグア', 'Gracias': 'グラシアス' },
+      tip: '道に迷ったり困ったことが起きたら、近くの店員さんや駅員さんに「Ayuda, por favor」と伝えよう。'
+    },
+    {
+      id: 'tr_3',
+      category: 'travel',
+      stage: 1,
+      spanish: '¿Dónde está la estación?',
+      kana: 'ドンデ エスタ ラ エスタシオン？',
+      japanese: '駅はどこですか？',
+      chunks: ['¿Dónde', 'está', 'la', 'estación?'],
+      distractors: ['cuenta', 'pase'],
+      wordRubies: { '¿Dónde': 'ドンデ(どこ)', 'está': 'エスタ(ある)', 'la': 'ラ', 'estación?': 'エスタシオン(駅)', 'cuenta': 'クエンタ', 'pase': 'パセ' },
+      tip: '地下鉄は「el metro（エル・メトロ）」、鉄道駅は「la estación（ラ・エスタシオン）」。入れ替えるだけでどっちも聞ける！'
+    },
+    {
+      id: 'tr_4',
+      category: 'travel',
+      stage: 1,
+      spanish: 'Perdón, una pregunta.',
+      kana: 'ペルドン ウナ プレグンタ',
+      japanese: 'すみません、1つ質問いいですか？',
+      chunks: ['Perdón,', 'una', 'pregunta.'],
+      distractors: ['mucho', 'cuesta'],
+      wordRubies: { 'Perdón,': 'ペルドン(すみません)', 'una': 'ウナ(1つの)', 'pregunta.': 'プレグンタ(質問)', 'mucho': 'ムーチョ', 'cuesta': 'クエスタ' },
+      tip: '知らない人に道を聞くときや店員さんに声をかけるときの丁寧な切り出し方！'
+    },
+    {
+      id: 'tr_5',
+      category: 'travel',
+      stage: 2,
+      spanish: 'Más despacio, por favor.',
+      kana: 'マス デスパシオ ポル ファボール',
+      japanese: 'もっとゆっくり話してください。',
+      chunks: ['Más', 'despacio,', 'por', 'favor.'],
+      distractors: ['rápido', 'agua'],
+      wordRubies: { 'Más': 'マス(もっと)', 'despacio,': 'デスパシオ(ゆっくり)', 'por': 'ポル', 'favor.': 'ファボール', 'rápido': 'ラピド', 'agua': 'アグア' },
+      tip: '現地の人のスペイン語はマシンガンのように速い！これを言えば優しくゆっくり言い直してくれるよ。'
+    },
+    {
+      id: 'tr_6',
+      category: 'travel',
+      stage: 2,
+      spanish: 'Quiero ir al estadio.',
+      kana: 'キエロ イール アル エスタディオ',
+      japanese: 'スタジアムに行きたいです。',
+      chunks: ['Quiero', 'ir', 'al', 'estadio.'],
+      distractors: ['comer', 'baño'],
+      wordRubies: { 'Quiero': 'キエロ(〜したい)', 'ir': 'イール(行く)', 'al': 'アル(〜へ)', 'estadio.': 'エスタディオ(スタジアム)', 'comer': 'コメール', 'baño': 'バニョ' },
+      tip: '夢のサッカースタジアムへ向かう時に駅員さんやタクシーに伝えられるワクワクの一言！'
+    },
+    {
+      id: 'tr_7',
+      category: 'travel',
+      stage: 2,
+      spanish: 'No entiendo bien.',
+      kana: 'ノ エンティエンド ビエン',
+      japanese: 'よくわかりません。',
+      chunks: ['No', 'entiendo', 'bien.'],
+      distractors: ['Soy', 'mucho'],
+      wordRubies: { 'No': 'ノ(〜ない)', 'entiendo': 'エンティエンド(理解する)', 'bien.': 'ビエン(よく)', 'Soy': 'ソイ', 'mucho': 'ムーチョ' },
+      tip: 'わからない時に曖昧にうなずくのはNG！はっきり「No entiendo bien.」と言えば簡単な言葉や身振りで教えてくれるよ。'
+    },
+    {
+      id: 'tr_8',
+      category: 'travel',
+      stage: 2,
+      spanish: '¿Nos hacemos una foto?',
+      kana: 'ノス アセモス ウナ フォト？',
+      japanese: '一緒に写真を撮ろうよ！',
+      chunks: ['¿Nos', 'hacemos', 'una', 'foto?'],
+      distractors: ['cuenta', 'donde'],
+      wordRubies: { '¿Nos': 'ノス', 'hacemos': 'アセモス(撮る/作る)', 'una': 'ウナ', 'foto?': 'フォト(写真)', 'cuenta': 'クエンタ', 'donde': 'ドンデ' },
+      tip: '仲良くなった現地のチームメイトやサポーターと最高の思い出を残すフレーズ！'
+    }
+  ],
+
+  roleplays: [
+    {
+      id: 'rp_soccer',
+      title: '現地のサッカー練習に混ぜてもらう',
+      subtitle: 'マドリードの公園ピッチで同年代のルーカスに声をかけよう！',
+      category: 'soccer',
+      partnerName: 'Lucas (ルーカス・13歳)',
+      partnerAvatar: '⚽',
+      location: 'Campo de Fútbol (マドリードの人工芝ピッチ)',
+      xpReward: 120,
+      turns: [
+        {
+          partnerSpanish: '¡Hola! ¿Qué tal? ¿Te gusta el fútbol?',
+          partnerKana: 'オラ！ ケ タル？ テ グスタ エル フトボル？',
+          partnerJapanese: 'やあ！調子はどう？君もサッカー好きなの？',
+          hint: 'まずは挨拶して、日本から来たこと＆一緒にプレーできるか聞いてみよう！',
+          options: [
+            {
+              spanish: '¡Hola! Soy de Japón. ¿Podemos jugar juntos?',
+              kana: 'オラ！ ソイ デ ハポン。ポデモス フガール フントス？',
+              japanese: 'やあ！日本から来ました。一緒にサッカーしてもいい？',
+              correct: true,
+              feedback: '完璧な第一声！挨拶＋出身＋「一緒にプレーできる？」が自然に伝わったよ！'
+            },
+            {
+              spanish: 'La cuenta, por favor.',
+              kana: 'ラ クエンタ ポル ファボール',
+              japanese: 'お会計お願いします。',
+              correct: false,
+              feedback: 'それはバルでお会計を頼むときのフレーズ！ピッチでは「¿Podemos jugar juntos?」を使おう。'
+            },
+            {
+              spanish: '¿Dónde está el baño?',
+              kana: 'ドンデ エスタ エル バニョ？',
+              japanese: 'トイレはどこですか？',
+              correct: false,
+              feedback: 'いきなりトイレを探すことに！まずは挨拶と「一緒に遊べる？」を伝えよう。'
+            }
+          ]
+        },
+        {
+          partnerSpanish: '¡Claro, qué guay! Yo soy Lucas. ¿De qué juegas?',
+          partnerKana: 'クラロ、ケ グアイ！ ジョ ソイ ルーカス。デ ケ フエガス？',
+          partnerJapanese: 'もちろん、最高じゃん！俺はルーカス。ポジションどこ？',
+          hint: '「よろしく！」と伝えて、試合開始の掛け声をかけよう！',
+          options: [
+            {
+              spanish: 'Mucho gusto. ¡Vamos!',
+              kana: 'ムーチョ グスト。バモス！',
+              japanese: 'よろしく！さあ行こうぜ！',
+              correct: true,
+              feedback: 'ナイス！「Mucho gusto（よろしく）」から「¡Vamos!（行こうぜ！）」でテンション最高潮！'
+            },
+            {
+              spanish: '¿Cuánto cuesta?',
+              kana: 'クアント クエスタ？',
+              japanese: 'いくらですか？',
+              correct: false,
+              feedback: '値段を聞いてどうする！自己紹介の後は「Mucho gusto（よろしく）」だ！'
+            },
+            {
+              spanish: 'No entiendo bien.',
+              kana: 'ノ エンティエンド ビエン',
+              japanese: 'よくわかりません。',
+              correct: false,
+              feedback: 'せっかく歓迎してくれているから、「Mucho gusto. ¡Vamos!」で元気よく応えよう！'
+            }
+          ]
+        },
+        {
+          partnerSpanish: '¡Toma el balón! ¡Buen pase!',
+          partnerKana: 'トマ エル バロン！ ブエン パセ！',
+          partnerJapanese: 'ボール受け取って！（パス交換してシュート！）ナイスパス！',
+          hint: 'ルーカスがすごいシュートを決めた！最高の褒め言葉と写真のお願いをしよう！',
+          options: [
+            {
+              spanish: '¡Golazo! ¡Bien jugado! ¿Nos hacemos una foto?',
+              kana: 'ゴラーソ！ ビエン フガード！ ノス アセモス ウナ フォト？',
+              japanese: 'スーパーゴール！いい試合だったね！一緒に写真撮ろうよ！',
+              correct: true,
+              feedback: '大成功！！ルーカスとすっかり親友になって記念写真も撮れたぞ！¡Vamos!'
+            },
+            {
+              spanish: 'Más despacio, por favor.',
+              kana: 'マス デスパシオ ポル ファボール',
+              japanese: 'もっとゆっくり話してください。',
+              correct: false,
+              feedback: 'ゴールを決めた瞬間は「¡Golazo!（スーパーゴール！）」で盛り上がろう！'
+            },
+            {
+              spanish: 'Agua, por favor.',
+              kana: 'アグア ポル ファボール',
+              japanese: '水をください。',
+              correct: false,
+              feedback: '喉も渇くけど、まずはゴールを讃えて「¡Golazo! ¡Bien jugado!」と言おう！'
+            }
+          ]
+        }
+      ]
+    },
+    {
+      id: 'rp_bar',
+      title: 'バルでオレンジジュースとチュロスを注文する',
+      subtitle: '練習帰りに本場のバルへ！自分の力で注文してお会計まで挑戦！',
+      category: 'food',
+      partnerName: 'Camarero (バルの店員さん)',
+      partnerAvatar: '🍊',
+      location: 'Bar El Sol (街角のバル)',
+      xpReward: 120,
+      turns: [
+        {
+          partnerSpanish: '¡Hola! Buenas tardes. ¿Qué quieres tomar?',
+          partnerKana: 'オラ！ ブエナス タルデス。ケ キエレス トマール？',
+          partnerJapanese: 'やあ、こんにちは！何を飲みますか？',
+          hint: '搾りたてのオレンジジュースを1つ頼んでみよう！',
+          options: [
+            {
+              spanish: '¡Hola! Un zumo de naranja, por favor.',
+              kana: 'オラ！ ウン スモ デ ナランハ ポル ファボール',
+              japanese: 'こんにちは！オレンジジュースを1つください。',
+              correct: true,
+              feedback: 'バッチリ！スペインのバルの定番「Zumo de naranja」をスマートに注文できた！'
+            },
+            {
+              spanish: '¿Dónde está la estación?',
+              kana: 'ドンデ エスタ ラ エスタシオン？',
+              japanese: '駅はどこですか？',
+              correct: false,
+              feedback: '今は注文のタイミング！「Un zumo de naranja, por favor.」を選ぼう。'
+            },
+            {
+              spanish: 'Soy de Japón.',
+              kana: 'ソイ デ ハポン',
+              japanese: '日本から来ました。',
+              correct: false,
+              feedback: '店員さんは注文を聞いているよ！飲み物を「por favor」で伝えよう。'
+            }
+          ]
+        },
+        {
+          partnerSpanish: '¡Muy bien! ¿Y para comer? Tenemos churros recién hechos.',
+          partnerKana: 'ムイ ビエン！ イ パラ コメール？ テネモス チュロス レシエン エチョス',
+          partnerJapanese: 'かしこまりました！食べ物はどうする？揚げたてのチュロスがあるよ。',
+          hint: 'ホットチョコ付きのチュロスを注文しよう！',
+          options: [
+            {
+              spanish: 'Quiero churros con chocolate.',
+              kana: 'キエロ チュロス コン チョコラテ',
+              japanese: 'ホットチョコ付きのチュロスが欲しいです。',
+              correct: true,
+              feedback: '最高！揚げたてチュロス＆ホットチョコが運ばれてきたぞ！'
+            },
+            {
+              spanish: '¡Buen pase!',
+              kana: 'ブエン パセ！',
+              japanese: 'ナイスパス！',
+              correct: false,
+              feedback: '店員さんにナイスパスと言ってしまった！「Quiero churros con chocolate.」で頼もう。'
+            },
+            {
+              spanish: 'Ayuda, por favor.',
+              kana: 'アユーダ ポル ファボール',
+              japanese: '助けてください。',
+              correct: false,
+              feedback: 'ピンチじゃないよ！美味しいチュロスを「Quiero churros con chocolate.」で注文しよう。'
+            }
+          ]
+        },
+        {
+          partnerSpanish: 'Aquí tienes. ¿Qué tal está todo?',
+          partnerKana: 'アキ ティエネス。ケ タル エスタ トド？',
+          partnerJapanese: 'どうぞ召し上がれ。味はどうだい？',
+          hint: '「めちゃくちゃ美味しい！」と感動を伝えて、お会計をお願いしよう！',
+          options: [
+            {
+              spanish: '¡Está riquísimo! La cuenta, por favor.',
+              kana: 'エスタ リキシモ！ ラ クエンタ ポル ファボール',
+              japanese: 'めちゃくちゃ美味しいです！お会計お願いします。',
+              correct: true,
+              feedback: 'ブラボー！店員さんもニコニコで「¡Gracias!」と送り出してくれたよ！'
+            },
+            {
+              spanish: '¿De qué juegas?',
+              kana: 'デ ケ フエガス？',
+              japanese: 'ポジションどこ？',
+              correct: false,
+              feedback: '味の感想とお会計を伝える場面！「¡Está riquísimo! La cuenta, por favor.」を選ぼう。'
+            },
+            {
+              spanish: 'No entiendo bien.',
+              kana: 'ノ エンティエンド ビエン',
+              japanese: 'よくわかりません。',
+              correct: false,
+              feedback: '美味しさを伝える「¡Está riquísimo!」とお会計「La cuenta, por favor.」を使ってみよう！'
+            }
+          ]
+        }
+      ]
+    },
+    {
+      id: 'rp_stadium',
+      title: 'スタジアムへの行き方を聞いてユニフォームを買う',
+      subtitle: '憧れのスタジアムへ移動＆公式ショップでMサイズのユニフォームをゲット！',
+      category: 'travel',
+      partnerName: 'Sofía (ショップスタッフ)',
+      partnerAvatar: '🏟️',
+      location: 'Tienda Oficial del Estadio (スタジアム公式ショップ)',
+      xpReward: 150,
+      turns: [
+        {
+          partnerSpanish: '¡Hola! ¿En qué puedo ayudarte?',
+          partnerKana: 'オラ！ エン ケ プエド アユダルテ？',
+          partnerJapanese: 'こんにちは！何かお探しですか？',
+          hint: '丁寧に切り出して、このユニフォームのMサイズがあるか聞いてみよう！',
+          options: [
+            {
+              spanish: 'Perdón, una pregunta. ¿Tienen esta camiseta en talla M?',
+              kana: 'ペルドン ウナ プレグンタ。ティエネン エスタ カミセタ エン タジャ エメ？',
+              japanese: 'すみません、1つ質問いいですか？このユニフォームのMサイズはありますか？',
+              correct: true,
+              feedback: 'すごく丁寧でカッコいい聞き方！スタッフさんがすぐ在庫を探してくれたよ。'
+            },
+            {
+              spanish: 'Agua, por favor.',
+              kana: 'アグア ポル ファボール',
+              japanese: '水をください。',
+              correct: false,
+              feedback: 'ここはユニフォームショップ！「¿Tienen esta camiseta en talla M?」でサイズを聞こう。'
+            },
+            {
+              spanish: 'Pásamela, por favor.',
+              kana: 'パサメラ ポル ファボール',
+              japanese: 'パス出して！',
+              correct: false,
+              feedback: 'ユニフォームをパスしてもらうんじゃなくて、Mサイズの在庫を聞いてみよう！'
+            }
+          ]
+        },
+        {
+          partnerSpanish: '¡Sí, aquí tienes la talla M! Te queda genial.',
+          partnerKana: 'シ、アキ ティエネス ラ タジャ エメ！ テ ケダ ヘニアル',
+          partnerJapanese: 'はい、Mサイズありますよ！とっても似合いそうね。',
+          hint: '値段がいくらか聞いて、買うことを伝えよう！',
+          options: [
+            {
+              spanish: '¡Qué guay! ¿Cuánto cuesta? Esto, por favor.',
+              kana: 'ケ グアイ！ クアント クエスタ？ エスト ポル ファボール',
+              japanese: '最高！いくらですか？これをください。',
+              correct: true,
+              feedback: '完璧！「¿Cuánto cuesta?（いくら？）」と「Esto, por favor（これください）」のコンボが決まった！'
+            },
+            {
+              spanish: '¿Dónde está el baño?',
+              kana: 'ドンデ エスタ エル バニョ？',
+              japanese: 'トイレはどこですか？',
+              correct: false,
+              feedback: 'せっかくMサイズが見つかったから値段を聞いてゲットしよう！'
+            },
+            {
+              spanish: 'Tengo trece años.',
+              kana: 'テンゴ トレセ アニョス',
+              japanese: '私は13歳です。',
+              correct: false,
+              feedback: '年齢よりもまずは「¿Cuánto cuesta?（いくらですか？）」と聞いてみよう！'
+            }
+          ]
+        },
+        {
+          partnerSpanish: 'Son ochenta euros. ¡Disfruta mucho del partido en el estadio!',
+          partnerKana: 'ソン オチェンタ エウロス。ディスフルタ ムーチョ デル パルティード エン エル エスタディオ！',
+          partnerJapanese: '80ユーロだよ。スタジアムでの試合を思いっきり楽しんでね！',
+          hint: '感謝の気持ちと「またね！」を元気よく伝えよう！',
+          options: [
+            {
+              spanish: '¡Muchas gracias! ¡Hasta luego!',
+              kana: 'ムーチャス グラシアス！ アスタ ルエゴ！',
+              japanese: '本当にありがとう！またね！',
+              correct: true,
+              feedback: 'ミッションコンプリート！新品のユニフォームを着てスタジアムへ突撃だ！'
+            },
+            {
+              spanish: 'Ayuda, por favor.',
+              kana: 'アユーダ ポル ファボール',
+              japanese: '助けてください。',
+              correct: false,
+              feedback: '最後は笑顔で「¡Muchas gracias! ¡Hasta luego!」とお礼を言おう！'
+            },
+            {
+              spanish: 'Más despacio, por favor.',
+              kana: 'マス デスパシオ ポル ファボール',
+              japanese: 'もっとゆっくり話してください。',
+              correct: false,
+              feedback: 'お会計が済んだから「¡Muchas gracias! ¡Hasta luego!」で気持ちよく締めくくろう！'
+            }
+          ]
+        }
+      ]
+    }
+  ]
+};
+
