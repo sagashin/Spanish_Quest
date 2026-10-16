@@ -2417,7 +2417,9 @@ root.render(<App />);
 // Compile and execute JSX via @babel/standalone so it works on both file:// and http://
 (function bootVamosQuest() {
   try {
-    const compiled = Babel.transform(APP_JSX_SOURCE, { presets: ['react'] }).code;
+    const compiled = Babel.transform(APP_JSX_SOURCE, {
+      presets: [['react', { runtime: 'classic' }]]
+    }).code;
     const runFn = new Function(compiled);
     runFn();
   } catch (err) {
