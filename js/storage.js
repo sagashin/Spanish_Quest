@@ -1,6 +1,7 @@
-// Vamos! Quest - LocalStorage State & Spaced Repetition System (SRS) Manager
+// Vamos! Quest - LocalStorage State, Custom Phrases & Spaced Repetition System (SRS) Manager
 (function () {
-  const STORAGE_KEY = 'vamos_quest_save_v1';
+  const STORAGE_KEY = 'vamos_quest_save_v2';
+  const LEGACY_KEY = 'vamos_quest_save_v1';
 
   function getTodayStr() {
     const d = new Date();
@@ -19,14 +20,16 @@
     return `${yyyy}-${mm}-${dd}`;
   }
 
+  function getAllPhrases(state) {
+    const base = (window.VAMOS_DATA && window.VAMOS_DATA.phrases) || [];
+    const custom = (state && Array.isArray(state.customPhrases)) ? state.customPhrases : [];
+    return [...custom, ...base];
+  }
+
   function createInitialState() {
     const today = getTodayStr();
     const cards = {};
     const phrases = (window.VAMOS_DATA && window.VAMOS_DATA.phrases) || [];
-
-    // Initialize all phrase records; pre-unlock 3 iconic starter phrases as due today
-    // so the user immediately sees the "今日の復習クエスト" alert and trading card demo,
-    // while all other phrases unlock automatically as soon as they appear in a Quest!
     const starterIds = ['gr_1', 'sc_1', 'fd_1'];
 
     phrases.forEach(p => {
@@ -42,15 +45,17 @@
     });
 
     return {
-      version: 1,
+      version: 2,
       playerName: 'Leo',
       xp: 60,
       streak: 1,
       lastStudyDate: today,
       soundEnabled: true,
       autoSpeak: true,
-      completedStages: {}, // e.g. { 'greetings_1': true }
-      completedRoleplays: {}, // e.g. { 'rp_soccer': true }
+      geminiApiKey: '',
+      geminiModel: 'gemini-3.8-flash',
+      customPhrases: [],
+      completedStages: {},
       cards,
       totalQuestsCleared: 0,
       totalReviewsCleared: 0
@@ -59,7 +64,7 @@
 
   function loadState() {
     try {
-      const raw = localStorage.getItem(STORAGE_KEY);
+      const raw = localStorage.getItem(STORAGE_KEY) || localStorage.getItem(LEGACY_KEY);
       if (!raw) {
         const init = createInitialState();
         saveState(init);
@@ -70,18 +75,19 @@
       const merged = {
         ...base,
         ...parsed,
+        geminiApiKey: typeof parsed.geminiApiKey === 'string' ? parsed.geminiApiKey : base.geminiApiKey,
+        geminiModel: parsed.geminiModel || base.geminiModel,
+        customPhrases: Array.isArray(parsed.customPhrases) ? parsed.customPhrases : [],
         cards: { ...base.cards, ...(parsed.cards || {}) },
-        completedStages: { ...(parsed.completedStages || {}) },
-        completedRoleplays: { ...(parsed.completedRoleplays || {}) }
+        completedStages: { ...(parsed.completedStages || {}) }
       };
-      // Check streak continuity
+
       const today = getTodayStr();
       if (merged.lastStudyDate && merged.lastStudyDate !== today) {
         const last = new Date(merged.lastStudyDate + 'T00:00:00');
         const curr = new Date(today + 'T00:00:00');
         const diffDays = Math.round((curr - last) / (1000 * 60 * 60 * 24));
         if (diffDays > 1) {
-          // Streak broken if more than 1 day skipped, but keep at least 1 when active
           merged.streak = 0;
         }
       }
@@ -99,7 +105,6 @@
     }
   }
 
-  // Record daily activity and update streak
   function touchStudyStreak(state) {
     const today = getTodayStr();
     let newStreak = state.streak || 1;
@@ -126,7 +131,6 @@
     };
   }
 
-  // Register a phrase as seen when it appears in a Quest
   function markPhraseSeen(state, phraseId) {
     const prev = state.cards[phraseId] || {
       seen: false,
@@ -151,7 +155,74 @@
     };
   }
 
-  // Update card after answering a question in Quest Mode
+  // Add a custom phrase from AI Dictionary or AI Roleplay Chat to SRS & Quest Pool
+  function addCustomPhrase(state, phraseInput) {
+    const today = getTodayStr();
+    const all = getAllPhrases(state);
+    const normTarget = String(phraseInput.spanish || '').trim().toLowerCase();
+
+    const existing = all.find(p => String(p.spanish || '').trim().toLowerCase() === normTarget);
+    if (existing) {
+      // Already exists: ensure it's marked seen and due for review
+      const prevCard = state.cards[existing.id] || { masteryLevel: 1 };
+      const updated = touchStudyStreak({
+        ...state,
+        cards: {
+          ...state.cards,
+          [existing.id]: {
+            ...prevCard,
+            seen: true,
+            masteryLevel: Math.max(1, prevCard.masteryLevel || 1),
+            nextReviewDate: today
+          }
+        }
+      });
+      return { state: updated, addedPhrase: existing, isDuplicate: true };
+    }
+
+    const id = 'custom_' + Date.now() + '_' + Math.floor(Math.random() * 1000);
+    const spanish = String(phraseInput.spanish || '').trim();
+    const pronunciation = String(phraseInput.pronunciation || phraseInput.kana || '').trim();
+    const japanese = String(phraseInput.japanese || '').trim();
+    const chunks = Array.isArray(phraseInput.chunks) && phraseInput.chunks.length > 0
+      ? phraseInput.chunks
+      : spanish.split(/\s+/).filter(Boolean);
+
+    const newPhrase = {
+      id,
+      category: phraseInput.category || 'soccer',
+      stage: 2,
+      isCustom: true,
+      spanish,
+      pronunciation,
+      kana: pronunciation,
+      japanese,
+      chunks,
+      distractors: ['por', 'favor', 'dónde'].filter(d => !spanish.toLowerCase().includes(d)).slice(0, 2),
+      wordRubies: {},
+      tip: phraseInput.tip || 'AI辞書・ロールプレイから追加したマイフレーズ！現地でどんどん使おう！'
+    };
+
+    const nextState = touchStudyStreak({
+      ...state,
+      xp: (state.xp || 0) + 20,
+      customPhrases: [newPhrase, ...(state.customPhrases || [])],
+      cards: {
+        ...state.cards,
+        [id]: {
+          seen: true,
+          masteryLevel: 1,
+          nextReviewDate: today,
+          lastReviewedDate: today,
+          correctCount: 1,
+          reviewCount: 0
+        }
+      }
+    });
+
+    return { state: nextState, addedPhrase: newPhrase, isDuplicate: false };
+  }
+
   function recordQuestAnswer(state, phraseId, isCorrect) {
     const today = getTodayStr();
     const prev = state.cards[phraseId] || {
@@ -168,15 +239,15 @@
 
     if (isCorrect) {
       nextLevel = Math.min(5, Math.max(1, prev.masteryLevel + 1));
-      // If first time learning in quest, make it reviewable today or tomorrow based on level
-      const intervalDays = nextLevel <= 1 ? 0 : nextLevel === 2 ? 1 : nextLevel === 3 ? 3 : 7;
+      // Intervals: Lv1=today/1d, Lv2=1d, Lv3=3d, Lv4=7d, Lv5=14d
+      const intervalDays = nextLevel <= 1 ? 0 : nextLevel === 2 ? 1 : nextLevel === 3 ? 3 : nextLevel === 4 ? 7 : 14;
       nextDue = addDaysStr(intervalDays);
     } else {
       nextLevel = Math.max(0, prev.masteryLevel - 1);
-      nextDue = today; // review today if missed!
+      nextDue = today;
     }
 
-    const updated = touchStudyStreak({
+    return touchStudyStreak({
       ...state,
       cards: {
         ...state.cards,
@@ -190,10 +261,9 @@
         }
       }
     });
-    return updated;
   }
 
-  // SRS Evaluation in Review Mode: quality = 'hard' | 'good' | 'easy'
+  // SRS Evaluation: quality = 'again' (もう一回) | 'good' (普通) | 'easy' (余裕)
   function recordSrsReview(state, phraseId, quality) {
     const today = getTodayStr();
     const prev = state.cards[phraseId] || {
@@ -205,20 +275,20 @@
       reviewCount: 0
     };
 
+    // Standard SRS intervals: 1日後, 3日後, 7日後, 14日後, 30日後
+    const srsIntervalsByLevel = [1, 1, 3, 7, 14, 30];
     let nextLevel = prev.masteryLevel;
     let daysToAdd = 1;
 
-    if (quality === 'hard') {
+    if (quality === 'again' || quality === 'hard') {
       nextLevel = Math.max(1, prev.masteryLevel - 1);
-      daysToAdd = 1; // Review again tomorrow
+      daysToAdd = 1; // 1日後
     } else if (quality === 'good') {
       nextLevel = Math.min(5, prev.masteryLevel + 1);
-      const intervals = [1, 1, 2, 4, 7, 14];
-      daysToAdd = intervals[nextLevel] || 3;
+      daysToAdd = srsIntervalsByLevel[nextLevel] || 3;
     } else if (quality === 'easy') {
       nextLevel = Math.min(5, prev.masteryLevel + 2);
-      const intervals = [1, 2, 4, 7, 14, 30];
-      daysToAdd = intervals[nextLevel] || 7;
+      daysToAdd = srsIntervalsByLevel[nextLevel] || 7;
     }
 
     const nextDue = addDaysStr(daysToAdd);
@@ -237,16 +307,15 @@
           nextReviewDate: nextDue,
           lastReviewedDate: today,
           reviewCount: (prev.reviewCount || 0) + 1,
-          correctCount: (prev.correctCount || 0) + (quality !== 'hard' ? 1 : 0)
+          correctCount: (prev.correctCount || 0) + (quality !== 'again' && quality !== 'hard' ? 1 : 0)
         }
       }
     });
   }
 
-  // Get list of phrases due for SRS review today (or earlier)
   function getDuePhrases(state) {
     const today = getTodayStr();
-    const phrases = (window.VAMOS_DATA && window.VAMOS_DATA.phrases) || [];
+    const phrases = getAllPhrases(state);
     return phrases.filter(p => {
       const c = state.cards && state.cards[p.id];
       if (!c || !c.seen) return false;
@@ -255,9 +324,8 @@
     });
   }
 
-  // Compute level, rank, and category progress metrics
   function computeStats(state) {
-    const phrases = (window.VAMOS_DATA && window.VAMOS_DATA.phrases) || [];
+    const phrases = getAllPhrases(state);
     const categories = (window.VAMOS_DATA && window.VAMOS_DATA.categories) || [];
     const ranks = (window.VAMOS_DATA && window.VAMOS_DATA.ranks) || [];
 
@@ -267,8 +335,8 @@
     const xpForNextLevel = 150;
 
     let seenCount = 0;
-    let learnedCount = 0; // masteryLevel >= 1
-    let masteredCount = 0; // masteryLevel >= 4
+    let learnedCount = 0;
+    let masteredCount = 0;
     let totalMasteryPoints = 0;
     const maxMasteryPoints = phrases.length * 5;
 
@@ -280,7 +348,6 @@
       if (c && c.masteryLevel > 0) totalMasteryPoints += Math.min(5, c.masteryLevel);
     });
 
-    // Overall readiness % combines phrase acquisition (70%) and mastery depth (30%)
     const learnedRatio = phrases.length > 0 ? learnedCount / phrases.length : 0;
     const masteryRatio = maxMasteryPoints > 0 ? totalMasteryPoints / maxMasteryPoints : 0;
     const readinessPct = Math.min(100, Math.round((learnedRatio * 0.7 + masteryRatio * 0.3) * 100));
@@ -325,6 +392,7 @@
       learnedCount,
       masteredCount,
       totalPhrases: phrases.length,
+      customCount: (state.customPhrases || []).length,
       readinessPct,
       currentRank,
       nextRank,
@@ -337,15 +405,16 @@
     STORAGE_KEY,
     getTodayStr,
     addDaysStr,
+    getAllPhrases,
     createInitialState,
     loadState,
     saveState,
     touchStudyStreak,
     markPhraseSeen,
+    addCustomPhrase,
     recordQuestAnswer,
     recordSrsReview,
     getDuePhrases,
     computeStats
   };
 })();
-

@@ -1,8 +1,7 @@
-// Vamos! Quest - Main Application (React 18 + Tailwind CSS)
+// Vamos! Quest - Main Application (React 18 + Tailwind CSS + Gemini API)
 const APP_JSX_SOURCE = `
 const { useState, useEffect, useMemo, useRef } = React;
 
-// Helper for shuffling arrays
 function shuffleArray(arr) {
   const copy = [...arr];
   for (let i = copy.length - 1; i > 0; i--) {
@@ -12,18 +11,16 @@ function shuffleArray(arr) {
   return copy;
 }
 
-// Clean punctuation from chunk for speech synthesis
 function cleanWordForSpeech(word) {
   return String(word || '').replace(/[¡!¿?.,]/g, '').trim();
 }
 
-// SVG Icon component for crisp sporty icons
+// Lucide-style SVG Icons
 function Icon({ name, className = "w-5 h-5" }) {
   const icons = {
     Flame: (
       <svg viewBox="0 0 24 24" fill="currentColor" className={className}>
         <path d="M12 2c1.5 3.5 4 5.5 4 9a4 4 0 11-8 0c0-1.5.5-3 1.5-4.5C9 8.5 8 10.5 8 12.5A6 6 0 0014 18.5a6 6 0 004-10.5C17.5 5 15 3 12 2z" />
-        <path fillOpacity="0.4" d="M12 22a7 7 0 007-7c0-3.5-2.5-6.5-5.5-8.5.5 2 0 4-1.5 5.5-1-1.5-1.5-3-1-4.5C7.5 10 5 12.5 5 15a7 7 0 007 7z" />
       </svg>
     ),
     Zap: (
@@ -127,6 +124,18 @@ function Icon({ name, className = "w-5 h-5" }) {
         <path d="M19 12H5" />
       </svg>
     ),
+    Send: (
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+        <line x1="22" x2="11" y1="2" y2="13" />
+        <polygon points="22 2 15 22 11 13 2 9 22 2" />
+      </svg>
+    ),
+    Plus: (
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className={className}>
+        <line x1="12" x2="12" y1="5" y2="19" />
+        <line x1="5" x2="19" y1="12" y2="12" />
+      </svg>
+    ),
     Download: (
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" className={className}>
         <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
@@ -151,8 +160,8 @@ function Icon({ name, className = "w-5 h-5" }) {
   return icons[name] || icons.Sparkles;
 }
 
-// ==================== 1. DASHBOARD COMPONENT ====================
-function DashboardView({ state, stats, onSelectCategoryStage, onStartReview, onNavigate, onOpenSettings }) {
+// ==================== 1. DASHBOARD VIEW ====================
+function DashboardView({ state, stats, onSelectCategoryStage, onStartReview, onNavigate }) {
   const [showRanksModal, setShowRanksModal] = useState(false);
   const dueCount = stats.duePhrases.length;
 
@@ -161,74 +170,73 @@ function DashboardView({ state, stats, onSelectCategoryStage, onStartReview, onN
       {/* Top Hero Banner & Status Cards */}
       <div className="relative rounded-3xl overflow-hidden border border-white/10 bg-gradient-to-br from-slate-900 via-slate-900/95 to-rose-950/70 p-5 sm:p-6 shadow-2xl">
         <div className="absolute -right-10 -top-10 w-44 h-44 rounded-full bg-gradient-to-br from-red-600/25 to-amber-500/20 blur-2xl pointer-events-none" />
-        
+
         <div className="flex flex-wrap items-center justify-between gap-4 mb-5">
           <div>
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-red-500/20 border border-red-500/40 text-xs font-bold text-amber-300 mb-2">
-              <span>🇪🇸 SPAIN EXPEDITION 2027</span>
+              <span>🇪🇸 SPAIN EXPEDITION</span>
               <span className="text-white/40">|</span>
-              <span>PLAYER: {state.playerName}</span>
+              <span>MODEL: {state.geminiModel || 'gemini-3.8-flash'}</span>
             </div>
             <h1 className="text-2xl sm:text-3xl font-black tracking-tight text-white">
               ¡Hola, <span className="text-transparent bg-clip-text bg-gradient-to-r from-amber-300 to-rose-400">{state.playerName}</span>! ⚽
             </h1>
             <p className="text-xs sm:text-sm text-slate-300 mt-0.5">
-              スペインのピッチと街で使えるリアルな一言を今日もモノにしよう！
+              パズル・音声・AIロールプレイで、来年のスペイン渡航に向けて楽しくレベルアップしよう！
             </p>
           </div>
 
           <button
             onClick={() => window.VAMOS_SPEECH.speakSpanish('¡Hola! ¡Vamos a España!')}
             className="flex items-center gap-2 px-3.5 py-2 rounded-2xl bg-white/10 hover:bg-white/15 border border-white/15 text-xs font-bold text-amber-300 transition active:scale-95"
-            title="スペイン語ボイスをテスト"
           >
             <Icon name="Volume2" className="w-4 h-4 text-amber-400" />
-            <span>¡Vamos! 音声</span>
+            <span>¡Vamos! 発音テスト</span>
           </button>
         </div>
 
-        {/* 4 Key Status Metrics */}
+        {/* 4 Status Cards */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-          {/* Level */}
           <div className="rounded-2xl bg-slate-950/70 border border-white/10 p-3.5 flex items-center gap-3">
             <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-amber-400 to-orange-600 flex items-center justify-center text-slate-950 font-black text-lg font-sport shadow-lg shadow-amber-500/20">
-              Lv.{stats.level}
+              {'Lv.' + stats.level}
             </div>
             <div className="flex-1 min-w-0">
               <div className="text-[11px] font-bold text-slate-400 uppercase">現在レベル</div>
-              <div className="text-sm font-black text-white truncate">あと {stats.xpForNextLevel - stats.xpInLevel} XP</div>
+              <div className="text-sm font-black text-white truncate">{'次まで ' + (stats.xpForNextLevel - stats.xpInLevel) + ' XP'}</div>
               <div className="w-full h-1.5 bg-slate-800 rounded-full overflow-hidden mt-1">
                 <div
                   className="h-full bg-gradient-to-r from-amber-400 to-orange-500 rounded-full transition-all duration-500"
-                  style={{ width: \`\${Math.round((stats.xpInLevel / stats.xpForNextLevel) * 100)}%\` }}
+                  style={{ width: Math.round((stats.xpInLevel / stats.xpForNextLevel) * 100) + '%' }}
                 />
               </div>
             </div>
           </div>
 
-          {/* Total XP */}
           <div className="rounded-2xl bg-slate-950/70 border border-white/10 p-3.5 flex items-center gap-3">
             <div className="w-11 h-11 rounded-xl bg-amber-500/15 border border-amber-500/30 flex items-center justify-center text-amber-400">
               <Icon name="Zap" className="w-6 h-6" />
             </div>
             <div>
               <div className="text-[11px] font-bold text-slate-400 uppercase">獲得XP</div>
-              <div className="text-xl font-black text-amber-300 font-sport">{stats.xp.toLocaleString()} <span className="text-xs font-bold">XP</span></div>
+              <div className="text-xl font-black text-amber-300 font-sport">
+                {stats.xp.toLocaleString()} <span className="text-xs font-bold">XP</span>
+              </div>
             </div>
           </div>
 
-          {/* Streak */}
           <div className="rounded-2xl bg-slate-950/70 border border-white/10 p-3.5 flex items-center gap-3">
             <div className="w-11 h-11 rounded-xl bg-rose-500/15 border border-rose-500/30 flex items-center justify-center text-rose-400 text-xl">
               🔥
             </div>
             <div>
               <div className="text-[11px] font-bold text-slate-400 uppercase">連続学習</div>
-              <div className="text-xl font-black text-rose-400 font-sport">{state.streak} <span className="text-xs font-bold text-slate-300">日連続</span></div>
+              <div className="text-xl font-black text-rose-400 font-sport">
+                {state.streak} <span className="text-xs font-bold text-slate-300">日連続</span>
+              </div>
             </div>
           </div>
 
-          {/* Learned Phrases */}
           <div className="rounded-2xl bg-slate-950/70 border border-white/10 p-3.5 flex items-center gap-3">
             <div className="w-11 h-11 rounded-xl bg-emerald-500/15 border border-emerald-500/30 flex items-center justify-center text-emerald-400">
               <Icon name="BookOpen" className="w-5 h-5" />
@@ -236,26 +244,30 @@ function DashboardView({ state, stats, onSelectCategoryStage, onStartReview, onN
             <div>
               <div className="text-[11px] font-bold text-slate-400 uppercase">習得フレーズ</div>
               <div className="text-xl font-black text-emerald-300 font-sport">
-                {stats.learnedCount} <span className="text-xs font-bold text-slate-400">/ {stats.totalPhrases}</span>
+                {stats.learnedCount} <span className="text-xs font-bold text-slate-400">{'/ ' + stats.totalPhrases}</span>
               </div>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Today's SRS Review Alert Banner */}
+      {/* SRS Review Alert */}
       <div
-        className={\`rounded-3xl p-4 sm:p-5 border transition-all \${
-          dueCount > 0
+        className={
+          'rounded-3xl p-4 sm:p-5 border transition-all ' +
+          (dueCount > 0
             ? 'bg-gradient-to-r from-amber-500/20 via-rose-500/20 to-amber-500/15 border-amber-400/60 animate-pulse-gold'
-            : 'bg-slate-900/80 border-white/10'
-        }\`}
+            : 'bg-slate-900/80 border-white/10')
+        }
       >
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div className="flex items-start sm:items-center gap-3.5">
-            <div className={\`w-12 h-12 rounded-2xl flex items-center justify-center text-2xl shrink-0 \${
-              dueCount > 0 ? 'bg-amber-400 text-slate-950 shadow-lg shadow-amber-500/30' : 'bg-emerald-500/20 text-emerald-400'
-            }\`}>
+            <div
+              className={
+                'w-12 h-12 rounded-2xl flex items-center justify-center text-2xl shrink-0 ' +
+                (dueCount > 0 ? 'bg-amber-400 text-slate-950 shadow-lg shadow-amber-500/30' : 'bg-emerald-500/20 text-emerald-400')
+              }
+            >
               {dueCount > 0 ? '⚡' : '✅'}
             </div>
             <div>
@@ -264,50 +276,51 @@ function DashboardView({ state, stats, onSelectCategoryStage, onStartReview, onN
                   忘却曲線 SRS アラート
                 </span>
                 {dueCount > 0 && (
-                  <span className="text-xs font-bold text-rose-300 animate-bounce">● 今が記憶定着のチャンス！</span>
+                  <span className="text-xs font-bold text-rose-300 animate-bounce">● 今日復習すべきカードあり！</span>
                 )}
               </div>
               <h2 className="text-base sm:text-lg font-black text-white mt-1">
                 {dueCount > 0
-                  ? \`今日復習すべきフレーズが \${dueCount}件 あります！\`
+                  ? '今日復習すべきフレーズが ' + dueCount + '件 あります！'
                   : '今日のSRS復習はすべて完了しています！🎉'}
               </h2>
               <p className="text-xs text-slate-300 mt-0.5">
                 {dueCount > 0
-                  ? '忘れる前に復習して「マスター（金カード）」へ進化させよう！ボーナスXPも獲得！'
-                  : 'いつでも「コレクション」から自由復習や発音チェックができるよ。'}
+                  ? '忘却曲線に沿って今復習すると記憶が長期定着！ボーナスXPもゲットしよう。'
+                  : '「単語帳＆AI辞書」から新しいフレーズをAI生成したり自由復習ができるよ！'}
               </p>
             </div>
           </div>
 
           <button
             onClick={() => onStartReview(dueCount > 0 ? 'due' : 'practice')}
-            className={\`px-5 py-3.5 rounded-2xl font-black text-sm flex items-center justify-center gap-2 shrink-0 transition active:scale-95 shadow-lg \${
-              dueCount > 0
+            className={
+              'px-5 py-3.5 rounded-2xl font-black text-sm flex items-center justify-center gap-2 shrink-0 transition active:scale-95 shadow-lg ' +
+              (dueCount > 0
                 ? 'bg-gradient-to-r from-amber-400 to-orange-500 text-slate-950 hover:brightness-110 shadow-amber-500/25'
-                : 'bg-slate-800 hover:bg-slate-700 text-amber-300 border border-amber-400/30'
-            }\`}
+                : 'bg-slate-800 hover:bg-slate-700 text-amber-300 border border-amber-400/30')
+            }
           >
             <Icon name="Sparkles" className="w-4 h-4" />
             <span>
-              {dueCount > 0 ? \`今日の復習クエスト（\${dueCount}件）\` : '復習プラクティス（5問）'}
+              {dueCount > 0 ? '今日の復習クエスト（' + dueCount + '件）' : '復習プラクティス（5問）'}
             </span>
           </button>
         </div>
       </div>
 
-      {/* Spain Expedition Readiness Card (称号＆渡航準備度) */}
+      {/* Spain Expedition Readiness Meter */}
       <div className="rounded-3xl bg-slate-900/90 border border-white/10 p-5 sm:p-6">
         <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
           <div className="flex items-center gap-2">
-            <span className="text-xs font-extrabold uppercase tracking-wider text-rose-400">🇪🇸 SPAIN READINESS</span>
-            <h2 className="text-base sm:text-lg font-black text-white">スペイン渡航準備度＆称号</h2>
+            <span className="text-xs font-extrabold uppercase tracking-wider text-rose-400">🇪🇸 SPAIN READINESS METER</span>
+            <h2 className="text-base sm:text-lg font-black text-white">スペイン渡航準備度メーター</h2>
           </div>
           <button
             onClick={() => setShowRanksModal(!showRanksModal)}
             className="text-xs font-bold text-amber-300 hover:underline flex items-center gap-1"
           >
-            <span>称号一覧を見る</span>
+            <span>称号ランク一覧</span>
             <span>{showRanksModal ? '▲' : '▼'}</span>
           </button>
         </div>
@@ -324,7 +337,7 @@ function DashboardView({ state, stats, onSelectCategoryStage, onStartReview, onN
               </div>
               <div className="text-right">
                 <span className="text-2xl font-black font-sport text-transparent bg-clip-text bg-gradient-to-r from-amber-300 to-rose-400">
-                  {stats.readinessPct}%
+                  {stats.readinessPct + '%'}
                 </span>
                 <span className="text-xs text-slate-400 block">渡航準備度</span>
               </div>
@@ -333,40 +346,41 @@ function DashboardView({ state, stats, onSelectCategoryStage, onStartReview, onN
             <div className="w-full h-3 bg-slate-800 rounded-full overflow-hidden mt-3 p-0.5">
               <div
                 className="h-full bg-gradient-to-r from-rose-500 via-amber-400 to-emerald-400 rounded-full transition-all duration-700"
-                style={{ width: \`\${Math.max(4, stats.readinessPct)}%\` }}
+                style={{ width: Math.max(4, stats.readinessPct) + '%' }}
               />
             </div>
             {stats.nextRank ? (
               <div className="text-[11px] text-slate-400 mt-1.5 flex justify-between">
-                <span>現在: {stats.currentRank.title}</span>
+                <span>{'現在: ' + stats.currentRank.title}</span>
                 <span className="text-amber-300 font-bold">
-                  次の称号「{stats.nextRank.badge} {stats.nextRank.title}」まで あと {Math.max(1, stats.nextRank.minPct - stats.readinessPct)}%
+                  {'次の称号「' + stats.nextRank.badge + ' ' + stats.nextRank.title + '」まで あと ' + Math.max(1, stats.nextRank.minPct - stats.readinessPct) + '%'}
                 </span>
               </div>
             ) : (
               <div className="text-[11px] text-amber-300 font-bold mt-1.5">
-                👑 最高称号「ピッチの司令塔」に到達！スペインで最高の体験をしよう！
+                👑 最高称号「スペインマスター」到達！いつでも自信を持ってスペインへ飛び立てるぞ！
               </div>
             )}
           </div>
         </div>
 
         {showRanksModal && (
-          <div className="mt-4 grid grid-cols-1 sm:grid-cols-5 gap-2.5 animate-pop">
+          <div className="mt-4 grid grid-cols-2 sm:grid-cols-4 gap-2.5 animate-pop">
             {window.VAMOS_DATA.ranks.map((r, idx) => {
               const unlocked = stats.readinessPct >= r.minPct;
               return (
                 <div
                   key={idx}
-                  className={\`rounded-xl p-3 border text-center \${
-                    unlocked
+                  className={
+                    'rounded-xl p-3 border text-center ' +
+                    (unlocked
                       ? 'bg-amber-500/10 border-amber-400/40 text-white'
-                      : 'bg-slate-950/50 border-white/5 text-slate-500 opacity-60'
-                  }\`}
+                      : 'bg-slate-950/50 border-white/5 text-slate-500 opacity-60')
+                  }
                 >
                   <div className="text-2xl mb-1">{r.badge}</div>
                   <div className="text-xs font-black">{r.title}</div>
-                  <div className="text-[10px] text-amber-300/80 font-sport mt-0.5">準備度 {r.minPct}%〜</div>
+                  <div className="text-[10px] text-amber-300/80 font-sport mt-0.5">{'準備度 ' + r.minPct + '%〜'}</div>
                 </div>
               );
             })}
@@ -374,25 +388,25 @@ function DashboardView({ state, stats, onSelectCategoryStage, onStartReview, onN
         )}
       </div>
 
-      {/* Category Progress Bars & Direct Stage Launchers */}
+      {/* 4 Category Progress Bars */}
       <div>
         <div className="flex items-center justify-between mb-3">
           <div>
-            <span className="text-xs font-extrabold uppercase tracking-wider text-amber-400">QUEST CATEGORIES</span>
+            <span className="text-xs font-extrabold uppercase tracking-wider text-amber-400">CATEGORY PROGRESS</span>
             <h2 className="text-lg sm:text-xl font-black text-white">カテゴリ別進捗＆クエスト出撃</h2>
           </div>
           <button
             onClick={() => onNavigate('quest')}
-            className="text-xs font-bold text-rose-400 hover:text-rose-300 flex items-center gap-1"
+            className="text-xs font-bold text-rose-400 hover:text-rose-300"
           >
-            <span>全ステージを見る →</span>
+            全ステージを見る →
           </button>
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           {stats.categoryStats.map(cat => {
-            const st1Cleared = state.completedStages[\`\${cat.id}_1\`];
-            const st2Cleared = state.completedStages[\`\${cat.id}_2\`];
+            const st1Cleared = state.completedStages[cat.id + '_1'];
+            const st2Cleared = state.completedStages[cat.id + '_2'];
             return (
               <div
                 key={cat.id}
@@ -401,7 +415,7 @@ function DashboardView({ state, stats, onSelectCategoryStage, onStartReview, onN
                 <div>
                   <div className="flex items-start justify-between gap-3">
                     <div className="flex items-center gap-3">
-                      <div className={\`w-12 h-12 rounded-2xl bg-gradient-to-br \${cat.color} flex items-center justify-center text-white shadow-lg\`}>
+                      <div className={'w-12 h-12 rounded-2xl bg-gradient-to-br ' + cat.color + ' flex items-center justify-center text-white shadow-lg'}>
                         <Icon name={cat.icon} className="w-6 h-6" />
                       </div>
                       <div>
@@ -409,10 +423,9 @@ function DashboardView({ state, stats, onSelectCategoryStage, onStartReview, onN
                         <p className="text-xs text-slate-400 line-clamp-1">{cat.subtitle}</p>
                       </div>
                     </div>
-                    <span className="text-lg font-black font-sport text-amber-300">{cat.pct}%</span>
+                    <span className="text-lg font-black font-sport text-amber-300">{cat.pct + '%'}</span>
                   </div>
 
-                  {/* Progress Bar */}
                   <div className="mt-4">
                     <div className="flex justify-between text-xs text-slate-400 mb-1">
                       <span>習得: <strong className="text-white">{cat.learned}</strong> / {cat.total} フレーズ</span>
@@ -420,34 +433,35 @@ function DashboardView({ state, stats, onSelectCategoryStage, onStartReview, onN
                     </div>
                     <div className="w-full h-2.5 bg-slate-950 rounded-full overflow-hidden border border-white/5">
                       <div
-                        className={\`h-full bg-gradient-to-r \${cat.color} rounded-full transition-all duration-500\`}
-                        style={{ width: \`\${Math.max(4, cat.pct)}%\` }}
+                        className={'h-full bg-gradient-to-r ' + cat.color + ' rounded-full transition-all duration-500'}
+                        style={{ width: Math.max(4, cat.pct) + '%' }}
                       />
                     </div>
                   </div>
                 </div>
 
-                {/* Stage Quick Launch Buttons */}
                 <div className="grid grid-cols-2 gap-2.5 mt-4 pt-3 border-t border-white/5">
                   <button
                     onClick={() => onSelectCategoryStage(cat.id, 1)}
-                    className={\`py-2.5 px-3 rounded-xl text-xs font-black flex items-center justify-center gap-1.5 transition active:scale-95 \${
-                      st1Cleared
+                    className={
+                      'py-2.5 px-3 rounded-xl text-xs font-black flex items-center justify-center gap-1.5 transition active:scale-95 ' +
+                      (st1Cleared
                         ? 'bg-emerald-500/15 text-emerald-300 border border-emerald-500/30 hover:bg-emerald-500/25'
-                        : 'bg-white/10 text-white hover:bg-white/15 border border-white/10'
-                    }\`}
+                        : 'bg-white/10 text-white hover:bg-white/15 border border-white/10')
+                    }
                   >
-                    <span>{st1Cleared ? '★' : '▶'} Stage 1 (基本)</span>
+                    <span>{(st1Cleared ? '★ ' : '▶ ') + 'Stage 1 (基本)'}</span>
                   </button>
                   <button
                     onClick={() => onSelectCategoryStage(cat.id, 2)}
-                    className={\`py-2.5 px-3 rounded-xl text-xs font-black flex items-center justify-center gap-1.5 transition active:scale-95 \${
-                      st2Cleared
+                    className={
+                      'py-2.5 px-3 rounded-xl text-xs font-black flex items-center justify-center gap-1.5 transition active:scale-95 ' +
+                      (st2Cleared
                         ? 'bg-emerald-500/15 text-emerald-300 border border-emerald-500/30 hover:bg-emerald-500/25'
-                        : 'bg-gradient-to-r from-rose-600 to-amber-500 text-slate-950 hover:brightness-110'
-                    }\`}
+                        : 'bg-gradient-to-r from-rose-600 to-amber-500 text-slate-950 hover:brightness-110')
+                    }
                   >
-                    <span>{st2Cleared ? '★' : '🔥'} Stage 2 (実践)</span>
+                    <span>{(st2Cleared ? '★ ' : '🔥 ') + 'Stage 2 (実践)'}</span>
                   </button>
                 </div>
               </div>
@@ -456,19 +470,19 @@ function DashboardView({ state, stats, onSelectCategoryStage, onStartReview, onN
         </div>
       </div>
 
-      {/* Roleplay & Backup Quick Promo */}
+      {/* Gemini AI Features Quick Launchers */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div
-          onClick={() => onNavigate('roleplay')}
-          className="cursor-pointer rounded-3xl bg-gradient-to-br from-rose-900/40 via-slate-900 to-slate-900 border border-rose-500/30 p-5 hover:border-rose-400/60 transition flex items-center justify-between gap-4"
+          onClick={() => onNavigate('ai_chat')}
+          className="cursor-pointer rounded-3xl bg-gradient-to-br from-rose-900/40 via-slate-900 to-slate-900 border border-rose-500/40 p-5 hover:border-rose-400 transition flex items-center justify-between gap-4"
         >
           <div>
             <span className="text-[11px] font-extrabold uppercase tracking-wider px-2.5 py-0.5 rounded-full bg-rose-500/20 text-rose-300 border border-rose-500/30">
-              AI ROLEPLAY CHALLENGE
+              GEMINI AI ROLEPLAY
             </span>
-            <h3 className="text-base font-black text-white mt-2">現地3ターン対話シミュレーション 🗣️</h3>
+            <h3 className="text-base font-black text-white mt-2">無限フリー・ロールプレイ 🗣️</h3>
             <p className="text-xs text-slate-300 mt-1">
-              サッカー練習への参加やバルでのチュロス注文をリアルに体験！
+              13歳のチームメイト「マテオ」やバル店員「カルロス」と返信サジェスト付きで会話！
             </p>
           </div>
           <div className="w-12 h-12 rounded-2xl bg-rose-500/20 border border-rose-500/40 flex items-center justify-center text-2xl shrink-0">
@@ -477,20 +491,20 @@ function DashboardView({ state, stats, onSelectCategoryStage, onStartReview, onN
         </div>
 
         <div
-          onClick={onOpenSettings}
-          className="cursor-pointer rounded-3xl bg-slate-900/90 border border-white/10 p-5 hover:border-white/25 transition flex items-center justify-between gap-4"
+          onClick={() => onNavigate('vocab')}
+          className="cursor-pointer rounded-3xl bg-gradient-to-br from-amber-900/30 via-slate-900 to-slate-900 border border-amber-500/40 p-5 hover:border-amber-400 transition flex items-center justify-between gap-4"
         >
           <div>
-            <span className="text-[11px] font-extrabold uppercase tracking-wider px-2.5 py-0.5 rounded-full bg-sky-500/20 text-sky-300 border border-sky-500/30">
-              DATA BACKUP & SETTINGS
+            <span className="text-[11px] font-extrabold uppercase tracking-wider px-2.5 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/30">
+              AI CUSTOM DICTIONARY
             </span>
-            <h3 className="text-base font-black text-white mt-2">学習データのJSON保存・復元 💾</h3>
+            <h3 className="text-base font-black text-white mt-2">「現地で知りたい言葉」AI辞書 ✨</h3>
             <p className="text-xs text-slate-300 mt-1">
-              進捗は自動保存中！スマホやPCへのデータ引き継ぎもワンタップ。
+              知りたい日本語を入力するだけで、パズル＆SRS復習カードをAI自動生成！
             </p>
           </div>
-          <div className="w-12 h-12 rounded-2xl bg-sky-500/15 border border-sky-500/30 flex items-center justify-center text-sky-400 shrink-0">
-            <Icon name="Settings" className="w-6 h-6" />
+          <div className="w-12 h-12 rounded-2xl bg-amber-500/20 border border-amber-500/40 flex items-center justify-center text-2xl shrink-0">
+            📖
           </div>
         </div>
       </div>
@@ -498,18 +512,17 @@ function DashboardView({ state, stats, onSelectCategoryStage, onStartReview, onN
   );
 }
 
-// ==================== 2. QUEST / LESSON MODE COMPONENT ====================
+// ==================== 2. QUEST / LESSON MODE VIEW ====================
 function QuestModeView({ state, initialSelection, onUpdateState, onGoToCollection }) {
   const categories = window.VAMOS_DATA.categories;
-  const allPhrases = window.VAMOS_DATA.phrases;
+  const allPhrases = useMemo(() => window.VAMOS_STORAGE.getAllPhrases(state), [state]);
 
   const [selectedCategory, setSelectedCategory] = useState(
     (initialSelection && initialSelection.category) || 'soccer'
   );
-  const [activeQuest, setActiveQuest] = useState(null); // { categoryId, stage, questions, currentIndex, score, newlyUnlockedIds }
+  const [activeQuest, setActiveQuest] = useState(null);
   const [questionState, setQuestionState] = useState(null);
 
-  // If launched directly from Dashboard with category + stage
   useEffect(() => {
     if (initialSelection && initialSelection.category && initialSelection.stage) {
       setSelectedCategory(initialSelection.category);
@@ -517,14 +530,12 @@ function QuestModeView({ state, initialSelection, onUpdateState, onGoToCollectio
     }
   }, [initialSelection]);
 
-  // Build a 5-question micro-learning stage mixing Chunk Puzzle, 4-Choice Listening, and Speaking Challenge
   function startStage(categoryId, stageNum) {
     const catPhrases = allPhrases.filter(p => p.category === categoryId);
     const stagePool = stageNum === 'all'
       ? catPhrases
       : catPhrases.filter(p => p.stage === stageNum);
 
-    // Ensure 5 questions per stage (combine stage phrases + review reinforcement from same category)
     const otherCatPhrases = catPhrases.filter(p => p.stage !== stageNum);
     const basePool = [...shuffleArray(stagePool), ...shuffleArray(otherCatPhrases)];
     const fivePhrases = [];
@@ -532,43 +543,25 @@ function QuestModeView({ state, initialSelection, onUpdateState, onGoToCollectio
       fivePhrases.push(basePool[i % basePool.length]);
     }
 
-    // Question formats: 0=chunk, 1=listening, 2=chunk, 3=listening, 4=speaking
     const types = ['chunk', 'listening', 'chunk', 'listening', 'speaking'];
 
     const questions = fivePhrases.map((phrase, idx) => {
       const qType = types[idx];
       if (qType === 'chunk') {
         const allBlocks = shuffleArray([
-          ...phrase.chunks.map((text, i) => ({ id: \`c_\${i}_\${text}\`, text, isTarget: true })),
-          ...(phrase.distractors || []).slice(0, 2).map((text, i) => ({ id: \`d_\${i}_\${text}\`, text, isTarget: false }))
+          ...phrase.chunks.map((text, i) => ({ id: 'c_' + i + '_' + text, text, isTarget: true })),
+          ...(phrase.distractors || ['por', 'favor']).slice(0, 2).map((text, i) => ({ id: 'd_' + i + '_' + text, text, isTarget: false }))
         ]);
-        return {
-          index: idx,
-          type: 'chunk',
-          phrase,
-          poolBlocks: allBlocks
-        };
+        return { index: idx, type: 'chunk', phrase, poolBlocks: allBlocks };
       } else if (qType === 'listening') {
-        const wrongOptions = shuffleArray(
-          allPhrases.filter(p => p.id !== phrase.id)
-        ).slice(0, 3);
+        const wrongOptions = shuffleArray(allPhrases.filter(p => p.id !== phrase.id)).slice(0, 3);
         const options = shuffleArray([phrase, ...wrongOptions]);
-        return {
-          index: idx,
-          type: 'listening',
-          phrase,
-          options
-        };
+        return { index: idx, type: 'listening', phrase, options };
       } else {
-        return {
-          index: idx,
-          type: 'speaking',
-          phrase
-        };
+        return { index: idx, type: 'speaking', phrase };
       }
     });
 
-    // Automatically register the first phrase into the Vocabulary Bank
     const newlyUnlocked = [];
     const firstId = questions[0].phrase.id;
     if (!state.cards[firstId]?.seen) {
@@ -577,7 +570,7 @@ function QuestModeView({ state, initialSelection, onUpdateState, onGoToCollectio
     const nextState = window.VAMOS_STORAGE.markPhraseSeen(state, firstId);
     onUpdateState(nextState);
 
-    const questObj = {
+    setActiveQuest({
       categoryId,
       stage: stageNum,
       questions,
@@ -586,8 +579,7 @@ function QuestModeView({ state, initialSelection, onUpdateState, onGoToCollectio
       earnedXp: 0,
       newlyUnlockedIds: newlyUnlocked,
       finished: false
-    };
-    setActiveQuest(questObj);
+    });
     initQuestionInteraction(questions[0], nextState.autoSpeak);
   }
 
@@ -609,12 +601,8 @@ function QuestModeView({ state, initialSelection, onUpdateState, onGoToCollectio
     }
   }
 
-  // Handle tapping a Spanish word block in Chunk Puzzle
   function handleTapBlock(block, isFromSelected) {
     if (!questionState || questionState.isSubmitted) return;
-    const currentQ = activeQuest.questions[activeQuest.currentIndex];
-
-    // Speak the tapped word in Spanish!
     window.VAMOS_SPEECH.playSfx('tap', state.soundEnabled);
     window.VAMOS_SPEECH.speakSpanish(cleanWordForSpeech(block.text), { rate: 0.95 });
 
@@ -631,7 +619,6 @@ function QuestModeView({ state, initialSelection, onUpdateState, onGoToCollectio
     }
   }
 
-  // Submit Chunk Puzzle answer
   function submitChunkAnswer() {
     if (!questionState || questionState.isSubmitted) return;
     const currentQ = activeQuest.questions[activeQuest.currentIndex];
@@ -640,23 +627,17 @@ function QuestModeView({ state, initialSelection, onUpdateState, onGoToCollectio
     const isCorrect =
       userWords.length === targetWords.length &&
       userWords.every((w, i) => w === targetWords[i]);
-
     finalizeQuestionResult(isCorrect);
   }
 
-  // Submit 4-choice Listening answer
   function submitListeningOption(optionPhrase) {
     if (!questionState || questionState.isSubmitted) return;
     const currentQ = activeQuest.questions[activeQuest.currentIndex];
     const isCorrect = optionPhrase.id === currentQ.phrase.id;
-    setQuestionState(prev => ({
-      ...prev,
-      selectedOptionId: optionPhrase.id
-    }));
+    setQuestionState(prev => ({ ...prev, selectedOptionId: optionPhrase.id }));
     finalizeQuestionResult(isCorrect);
   }
 
-  // Start Web Speech API microphone recognition for Speaking question
   function handleStartMic() {
     if (!questionState || questionState.isSubmitted) return;
     const currentQ = activeQuest.questions[activeQuest.currentIndex];
@@ -681,8 +662,8 @@ function QuestModeView({ state, initialSelection, onUpdateState, onGoToCollectio
           recognizedText: transcript,
           pronunciationScore: bestEval.score,
           micMessage: bestEval.isMatch
-            ? \`🎉 バッチリ聞き取れました！「\${transcript}」(一致度 \${bestEval.score}%)\`
-            : \`聞き取り結果:「\${transcript}」— もう一度マイクを押すか「タップで発音クリア」で進めるよ！\`
+            ? '🎉 バッチリ聞き取れました！「' + transcript + '」(一致度 ' + bestEval.score + '%)'
+            : '聞き取り結果:「' + transcript + '」— もう一度マイクを押すか「スキップ/タップでクリア」で進めるよ！'
         }));
 
         if (bestEval.isMatch) {
@@ -690,22 +671,14 @@ function QuestModeView({ state, initialSelection, onUpdateState, onGoToCollectio
         }
       },
       onError: (errMsg) => {
-        setQuestionState(prev => ({
-          ...prev,
-          isListeningMic: false,
-          micMessage: errMsg
-        }));
+        setQuestionState(prev => ({ ...prev, isListeningMic: false, micMessage: errMsg }));
       },
       onEnd: () => {
-        setQuestionState(prev => ({
-          ...prev,
-          isListeningMic: false
-        }));
+        setQuestionState(prev => ({ ...prev, isListeningMic: false }));
       }
     });
   }
 
-  // Fallback / Tap to clear speaking challenge
   function handleTapClearSpeaking() {
     if (!questionState || questionState.isSubmitted) return;
     const currentQ = activeQuest.questions[activeQuest.currentIndex];
@@ -714,7 +687,7 @@ function QuestModeView({ state, initialSelection, onUpdateState, onGoToCollectio
       ...prev,
       recognizedText: currentQ.phrase.spanish,
       pronunciationScore: 100,
-      micMessage: '✨ 声出し確認クリア！ネイティブ発音をしっかりイメージできたね！'
+      micMessage: '✨ タップでクリア！ネイティブ発音をしっかりイメージできたね！'
     }));
     finalizeQuestionResult(true);
   }
@@ -726,21 +699,13 @@ function QuestModeView({ state, initialSelection, onUpdateState, onGoToCollectio
 
     const xpDelta = isCorrect ? 25 : 10;
     const updatedState = window.VAMOS_STORAGE.recordQuestAnswer(
-      {
-        ...state,
-        xp: (state.xp || 0) + xpDelta
-      },
+      { ...state, xp: (state.xp || 0) + xpDelta },
       currentQ.phrase.id,
       isCorrect
     );
     onUpdateState(updatedState);
 
-    setQuestionState(prev => ({
-      ...prev,
-      isSubmitted: true,
-      isCorrect
-    }));
-
+    setQuestionState(prev => ({ ...prev, isSubmitted: true, isCorrect }));
     setActiveQuest(prev => ({
       ...prev,
       correctCount: prev.correctCount + (isCorrect ? 1 : 0),
@@ -748,13 +713,11 @@ function QuestModeView({ state, initialSelection, onUpdateState, onGoToCollectio
     }));
   }
 
-  // Move to next question or finish stage
   function handleNextQuestion() {
     const nextIdx = activeQuest.currentIndex + 1;
     if (nextIdx >= activeQuest.questions.length) {
-      // Stage Complete!
       window.VAMOS_SPEECH.playSfx('fanfare', state.soundEnabled);
-      const stageKey = \`\${activeQuest.categoryId}_\${activeQuest.stage}\`;
+      const stageKey = activeQuest.categoryId + '_' + activeQuest.stage;
       const stageBonusXp = 40;
       const nextState = {
         ...state,
@@ -780,27 +743,26 @@ function QuestModeView({ state, initialSelection, onUpdateState, onGoToCollectio
       setActiveQuest(prev => ({
         ...prev,
         currentIndex: nextIdx,
-        newlyUnlockedIds: !wasSeen && !prev.newlyUnlockedIds.includes(nextQ.phrase.id)
-          ? [...prev.newlyUnlockedIds, nextQ.phrase.id]
-          : prev.newlyUnlockedIds
+        newlyUnlockedIds:
+          !wasSeen && !prev.newlyUnlockedIds.includes(nextQ.phrase.id)
+            ? [...prev.newlyUnlockedIds, nextQ.phrase.id]
+            : prev.newlyUnlockedIds
       }));
       initQuestionInteraction(nextQ, state.autoSpeak);
     }
   }
 
-  // ---- STAGE SELECTOR VIEW ----
   if (!activeQuest) {
     const currentCatObj = categories.find(c => c.id === selectedCategory) || categories[0];
     const catPhrases = allPhrases.filter(p => p.category === selectedCategory);
 
     return (
       <div className="space-y-6 pb-8 animate-pop">
-        {/* Category Selector Tabs */}
         <div>
-          <span className="text-xs font-extrabold uppercase tracking-wider text-amber-400">SELECT CATEGORY</span>
+          <span className="text-xs font-extrabold uppercase tracking-wider text-amber-400">QUEST & MICRO-LEARNING</span>
           <h1 className="text-2xl font-black text-white mt-0.5">クエスト学習モード ⚔️</h1>
           <p className="text-xs sm:text-sm text-slate-300 mt-1">
-            1ステージ5問！パズル・リスニング・スピーキングで直感的にフレーズを身につけよう。
+            1ステージ5問！チャンク並び替えパズル・4択リスニング・スピーキング挑戦で楽しくマスターしよう。
           </p>
 
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 mt-4">
@@ -810,11 +772,12 @@ function QuestModeView({ state, initialSelection, onUpdateState, onGoToCollectio
                 <button
                   key={cat.id}
                   onClick={() => setSelectedCategory(cat.id)}
-                  className={\`p-3.5 rounded-2xl border text-left transition flex items-center gap-3 \${
-                    active
-                      ? \`bg-gradient-to-br \${cat.color} text-white border-white/40 shadow-lg\`
-                      : 'bg-slate-900/90 text-slate-300 border-white/10 hover:border-white/25'
-                  }\`}
+                  className={
+                    'p-3.5 rounded-2xl border text-left transition flex items-center gap-3 ' +
+                    (active
+                      ? 'bg-gradient-to-br ' + cat.color + ' text-white border-white/40 shadow-lg'
+                      : 'bg-slate-900/90 text-slate-300 border-white/10 hover:border-white/25')
+                  }
                 >
                   <Icon name={cat.icon} className="w-5 h-5 shrink-0" />
                   <div className="truncate">
@@ -826,11 +789,10 @@ function QuestModeView({ state, initialSelection, onUpdateState, onGoToCollectio
           </div>
         </div>
 
-        {/* Stage Cards for Selected Category */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          {[1, 2, 'all'].map((stageNum) => {
+          {[1, 2, 'all'].map(stageNum => {
             const isAll = stageNum === 'all';
-            const stageKey = \`\${selectedCategory}_\${stageNum}\`;
+            const stageKey = selectedCategory + '_' + stageNum;
             const isCleared = state.completedStages[stageKey];
             const stagePhrases = isAll
               ? catPhrases
@@ -843,8 +805,8 @@ function QuestModeView({ state, initialSelection, onUpdateState, onGoToCollectio
               >
                 <div>
                   <div className="flex items-center justify-between gap-2 mb-3">
-                    <span className={\`text-xs font-black px-3 py-1 rounded-full border \${currentCatObj.badgeBg}\`}>
-                      {isAll ? '🏆 総まとめマッチ' : \`STAGE \${stageNum}\`}
+                    <span className={'text-xs font-black px-3 py-1 rounded-full border ' + currentCatObj.badgeBg}>
+                      {isAll ? '🏆 総まとめ＋AI追加分' : 'STAGE ' + stageNum}
                     </span>
                     {isCleared && (
                       <span className="text-xs font-black text-emerald-400 flex items-center gap-1">
@@ -855,16 +817,15 @@ function QuestModeView({ state, initialSelection, onUpdateState, onGoToCollectio
 
                   <h3 className="text-lg font-black text-white">
                     {isAll
-                      ? \`\${currentCatObj.name}・オールスター5問\`
+                      ? currentCatObj.name + '・オールスター5問'
                       : stageNum === 1
-                      ? \`\${currentCatObj.name}：基本フレーズ編\`
-                      : \`\${currentCatObj.name}：実践応用編\`}
+                      ? currentCatObj.name + '：基本フレーズ編'
+                      : currentCatObj.name + '：実践＆応用編'}
                   </h3>
                   <p className="text-xs text-slate-400 mt-1">
                     全5問（並び替えパズル・4択リスニング・発音チャレンジ）
                   </p>
 
-                  {/* Preview of phrases in this stage */}
                   <div className="mt-4 space-y-2">
                     {stagePhrases.slice(0, 4).map(p => (
                       <div
@@ -873,10 +834,11 @@ function QuestModeView({ state, initialSelection, onUpdateState, onGoToCollectio
                         className="cursor-pointer rounded-xl bg-slate-950/80 border border-white/5 px-3 py-2 flex items-center justify-between gap-2 hover:border-white/20"
                       >
                         <div className="min-w-0">
-                          <div className="text-xs font-black text-amber-300 truncate">{p.spanish}</div>
+                          <div className="text-[10px] text-amber-300/80 font-bold truncate">{p.pronunciation || p.kana}</div>
+                          <div className="text-xs font-black text-white truncate">{p.spanish}</div>
                           <div className="text-[11px] text-slate-400 truncate">{p.japanese}</div>
                         </div>
-                        <Icon name="Volume2" className="w-4 h-4 text-slate-400 shrink-0" />
+                        <Icon name="Volume2" className="w-4 h-4 text-amber-400 shrink-0" />
                       </div>
                     ))}
                   </div>
@@ -884,7 +846,7 @@ function QuestModeView({ state, initialSelection, onUpdateState, onGoToCollectio
 
                 <button
                   onClick={() => startStage(selectedCategory, stageNum)}
-                  className={\`w-full mt-5 py-3.5 rounded-2xl font-black text-sm flex items-center justify-center gap-2 shadow-lg transition active:scale-95 bg-gradient-to-r \${currentCatObj.color} text-white hover:brightness-110\`}
+                  className={'w-full mt-5 py-3.5 rounded-2xl font-black text-sm flex items-center justify-center gap-2 shadow-lg transition active:scale-95 bg-gradient-to-r ' + currentCatObj.color + ' text-white hover:brightness-110'}
                 >
                   <span>キックオフ！（5問スタート）</span>
                 </button>
@@ -896,7 +858,6 @@ function QuestModeView({ state, initialSelection, onUpdateState, onGoToCollectio
     );
   }
 
-  // ---- STAGE COMPLETED CELEBRATION VIEW ----
   if (activeQuest.finished) {
     const unlockedPhrases = allPhrases.filter(p => activeQuest.newlyUnlockedIds.includes(p.id));
     return (
@@ -908,42 +869,22 @@ function QuestModeView({ state, initialSelection, onUpdateState, onGoToCollectio
           <span className="text-xs font-extrabold uppercase tracking-widest text-amber-300">¡GOLAZO! STAGE COMPLETE</span>
           <h2 className="text-2xl sm:text-3xl font-black text-white mt-1">ステージクリア！！ 🎉</h2>
           <p className="text-sm text-slate-300 mt-1">
-            5問中 <strong className="text-amber-300">{activeQuest.correctCount}問</strong> 正解！スペイン渡航へまた一歩前進だ！
+            5問中 <strong className="text-amber-300">{activeQuest.correctCount + '問'}</strong> 正解！スペイン渡航へまた一歩前進だ！
           </p>
         </div>
 
         <div className="grid grid-cols-2 gap-3">
           <div className="rounded-2xl bg-slate-950/90 border border-amber-400/30 p-4">
             <div className="text-xs text-slate-400 font-bold">獲得XP（ボーナス込）</div>
-            <div className="text-2xl font-black text-amber-300 font-sport mt-1">+{activeQuest.earnedXp} XP</div>
+            <div className="text-2xl font-black text-amber-300 font-sport mt-1">{'+' + activeQuest.earnedXp + ' XP'}</div>
           </div>
           <div className="rounded-2xl bg-slate-950/90 border border-emerald-400/30 p-4">
             <div className="text-xs text-slate-400 font-bold">図鑑登録フレーズ</div>
             <div className="text-2xl font-black text-emerald-300 font-sport mt-1">
-              {unlockedPhrases.length > 0 ? \`+\${unlockedPhrases.length} 枚 NEW!\` : '習熟度UP!'}
+              {unlockedPhrases.length > 0 ? '+' + unlockedPhrases.length + ' 枚 NEW!' : '習熟度UP!'}
             </div>
           </div>
         </div>
-
-        {unlockedPhrases.length > 0 && (
-          <div className="text-left space-y-2">
-            <div className="text-xs font-black text-amber-300 uppercase">✨ 新しくトレカ図鑑に登録されたフレーズ</div>
-            {unlockedPhrases.map(p => (
-              <div
-                key={p.id}
-                onClick={() => window.VAMOS_SPEECH.speakSpanish(p.spanish)}
-                className="cursor-pointer rounded-2xl bg-slate-950/80 border border-amber-400/30 p-3 flex items-center justify-between"
-              >
-                <div>
-                  <div className="text-[11px] text-amber-300/90 font-bold">{p.kana}</div>
-                  <div className="text-sm font-black text-white">{p.spanish}</div>
-                  <div className="text-xs text-slate-400">{p.japanese}</div>
-                </div>
-                <Icon name="Volume2" className="w-5 h-5 text-amber-300" />
-              </div>
-            ))}
-          </div>
-        )}
 
         <div className="flex flex-col sm:flex-row gap-3 pt-2">
           <button
@@ -956,21 +897,20 @@ function QuestModeView({ state, initialSelection, onUpdateState, onGoToCollectio
             onClick={onGoToCollection}
             className="flex-1 py-3.5 rounded-2xl bg-gradient-to-r from-amber-400 to-orange-500 text-slate-950 font-black text-sm transition shadow-lg shadow-amber-500/25"
           >
-            トレカ図鑑を見る ✨
+            単語帳＆AI辞書を見る ✨
           </button>
         </div>
       </div>
     );
   }
 
-  // ---- ACTIVE QUESTION VIEW ----
   const currentQ = activeQuest.questions[activeQuest.currentIndex];
   const phrase = currentQ.phrase;
+  const kanaGuide = phrase.pronunciation || phrase.kana || '';
   const progressPct = ((activeQuest.currentIndex + 1) / activeQuest.questions.length) * 100;
 
   return (
     <div className="max-w-2xl mx-auto space-y-5 pb-8 animate-pop">
-      {/* Top Bar: Back & Progress */}
       <div className="flex items-center gap-3">
         <button
           onClick={() => setActiveQuest(null)}
@@ -980,9 +920,7 @@ function QuestModeView({ state, initialSelection, onUpdateState, onGoToCollectio
         </button>
         <div className="flex-1">
           <div className="flex justify-between text-xs font-bold text-slate-400 mb-1">
-            <span>
-              QUESTION {activeQuest.currentIndex + 1} / {activeQuest.questions.length}
-            </span>
+            <span>{'QUESTION ' + (activeQuest.currentIndex + 1) + ' / ' + activeQuest.questions.length}</span>
             <span className="text-amber-300">
               {currentQ.type === 'chunk'
                 ? '🧩 チャンク並び替えパズル'
@@ -994,15 +932,13 @@ function QuestModeView({ state, initialSelection, onUpdateState, onGoToCollectio
           <div className="w-full h-2.5 bg-slate-900 rounded-full overflow-hidden border border-white/10">
             <div
               className="h-full bg-gradient-to-r from-rose-500 to-amber-400 rounded-full transition-all duration-300"
-              style={{ width: \`\${progressPct}%\` }}
+              style={{ width: progressPct + '%' }}
             />
           </div>
         </div>
       </div>
 
-      {/* Question Card */}
       <div className="rounded-3xl bg-slate-900/95 border border-white/10 p-5 sm:p-6 shadow-2xl space-y-5">
-        {/* Audio & Prompt Header */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-white/10">
           <div>
             <span className="text-xs font-extrabold uppercase tracking-wider px-2.5 py-1 rounded-full bg-rose-500/20 text-rose-300 border border-rose-500/30">
@@ -1014,20 +950,19 @@ function QuestModeView({ state, initialSelection, onUpdateState, onGoToCollectio
             </span>
             {currentQ.type === 'chunk' ? (
               <h2 className="text-xl sm:text-2xl font-black text-white mt-2">
-                「{phrase.japanese}」
+                {'「' + phrase.japanese + '」'}
               </h2>
             ) : (
               <div className="mt-2">
-                <div className="text-xs font-bold text-amber-300 tracking-wide">{phrase.kana}</div>
+                <div className="text-xs font-bold text-amber-300 tracking-wide">{kanaGuide}</div>
                 <h2 className="text-2xl sm:text-3xl font-black text-white font-sport">{phrase.spanish}</h2>
                 {currentQ.type === 'speaking' && (
-                  <div className="text-sm text-slate-300 mt-1">意味：{phrase.japanese}</div>
+                  <div className="text-sm text-slate-300 mt-1">{'意味：' + phrase.japanese}</div>
                 )}
               </div>
             )}
           </div>
 
-          {/* Native TTS Controls (Normal + Slow Turtle) */}
           <div className="flex items-center gap-2 shrink-0">
             <button
               onClick={() => window.VAMOS_SPEECH.speakSpanish(phrase.spanish, { rate: 0.94 })}
@@ -1039,22 +974,19 @@ function QuestModeView({ state, initialSelection, onUpdateState, onGoToCollectio
             <button
               onClick={() => window.VAMOS_SPEECH.speakSpanish(phrase.spanish, { rate: 0.62 })}
               className="px-3 py-2.5 rounded-2xl bg-slate-800 hover:bg-slate-700 text-amber-300 border border-amber-400/30 font-bold text-xs active:scale-95"
-              title="ゆっくり再生"
             >
               🐢 ゆっくり
             </button>
           </div>
         </div>
 
-        {/* ---- TYPE 1: CHUNK PUZZLE ---- */}
         {currentQ.type === 'chunk' && questionState && (
           <div className="space-y-5">
-            <div className="text-xs text-slate-400 flex items-center justify-between">
-              <span>💡 単語ブロックをタップすると発音が鳴るよ！</span>
-              <span className="text-amber-300 font-bold">ガイド: {phrase.kana}</span>
+            <div className="text-xs text-slate-400 flex flex-wrap items-center justify-between gap-2">
+              <span>💡 単語ブロックをタップするとスペイン語発音が鳴るよ！</span>
+              <span className="text-amber-300 font-bold">{'発音ガイド: ' + kanaGuide}</span>
             </div>
 
-            {/* Selected Answer Tray */}
             <div className="min-h-[84px] rounded-2xl bg-slate-950/90 border-2 border-dashed border-white/15 p-3.5 flex flex-wrap items-center gap-2.5">
               {questionState.selectedBlocks.length === 0 ? (
                 <span className="text-xs text-slate-500 mx-auto">
@@ -1077,7 +1009,6 @@ function QuestModeView({ state, initialSelection, onUpdateState, onGoToCollectio
               )}
             </div>
 
-            {/* Available Word Blocks Pool */}
             <div className="flex flex-wrap gap-2.5 pt-1">
               {currentQ.poolBlocks.map(block => {
                 const isUsed = questionState.selectedBlocks.some(b => b.id === block.id);
@@ -1086,14 +1017,15 @@ function QuestModeView({ state, initialSelection, onUpdateState, onGoToCollectio
                     key={block.id}
                     onClick={() => !isUsed && handleTapBlock(block, false)}
                     disabled={isUsed || questionState.isSubmitted}
-                    className={\`chunk-btn px-4 py-2.5 rounded-xl font-black text-sm flex flex-col items-center border transition \${
-                      isUsed
+                    className={
+                      'chunk-btn px-4 py-2.5 rounded-xl font-black text-sm flex flex-col items-center border transition ' +
+                      (isUsed
                         ? 'bg-slate-900/40 text-slate-600 border-white/5 opacity-40 cursor-not-allowed'
-                        : 'bg-slate-800 hover:bg-slate-700 text-white border-white/15'
-                    }\`}
+                        : 'bg-slate-800 hover:bg-slate-700 text-white border-white/15')
+                    }
                   >
                     <span className="text-[10px] font-bold text-amber-300/90 leading-none mb-0.5">
-                      {phrase.wordRubies?.[block.text] || 'スペイン語'}
+                      {phrase.wordRubies?.[block.text] || ''}
                     </span>
                     <span className="font-sport">{block.text}</span>
                   </button>
@@ -1105,11 +1037,12 @@ function QuestModeView({ state, initialSelection, onUpdateState, onGoToCollectio
               <button
                 onClick={submitChunkAnswer}
                 disabled={questionState.selectedBlocks.length === 0}
-                className={\`w-full py-3.5 rounded-2xl font-black text-sm transition \${
-                  questionState.selectedBlocks.length > 0
+                className={
+                  'w-full py-3.5 rounded-2xl font-black text-sm transition ' +
+                  (questionState.selectedBlocks.length > 0
                     ? 'bg-gradient-to-r from-rose-600 to-amber-500 text-white shadow-lg active:scale-95'
-                    : 'bg-slate-800 text-slate-500 cursor-not-allowed'
-                }\`}
+                    : 'bg-slate-800 text-slate-500 cursor-not-allowed')
+                }
               >
                 回答をチェックする！
               </button>
@@ -1117,65 +1050,58 @@ function QuestModeView({ state, initialSelection, onUpdateState, onGoToCollectio
           </div>
         )}
 
-        {/* ---- TYPE 2: 4-CHOICE LISTENING ---- */}
         {currentQ.type === 'listening' && questionState && (
-          <div className="space-y-3">
-            <div className="grid grid-cols-1 gap-2.5">
-              {currentQ.options.map((opt, i) => {
-                const isSelected = questionState.selectedOptionId === opt.id;
-                const isAnswer = opt.id === phrase.id;
-                let btnStyle = 'bg-slate-950/80 hover:bg-slate-800 border-white/10 text-white';
-                if (questionState.isSubmitted) {
-                  if (isAnswer) {
-                    btnStyle = 'bg-emerald-500/20 border-emerald-400 text-emerald-200';
-                  } else if (isSelected && !isAnswer) {
-                    btnStyle = 'bg-rose-500/20 border-rose-400 text-rose-200';
-                  } else {
-                    btnStyle = 'bg-slate-950/40 border-white/5 text-slate-500';
-                  }
-                }
-                return (
-                  <button
-                    key={opt.id}
-                    onClick={() => submitListeningOption(opt)}
-                    disabled={questionState.isSubmitted}
-                    className={\`p-4 rounded-2xl border-2 text-left font-bold text-sm sm:text-base flex items-center justify-between transition \${btnStyle}\`}
-                  >
-                    <div className="flex items-center gap-3">
-                      <span className="w-7 h-7 rounded-lg bg-white/10 flex items-center justify-center text-xs font-black text-amber-300">
-                        {i + 1}
-                      </span>
-                      <span>{opt.japanese}</span>
-                    </div>
-                    {questionState.isSubmitted && isAnswer && (
-                      <span className="text-emerald-400 font-black text-xs">✓ 正解</span>
-                    )}
-                  </button>
-                );
-              })}
-            </div>
+          <div className="grid grid-cols-1 gap-2.5">
+            {currentQ.options.map((opt, i) => {
+              const isSelected = questionState.selectedOptionId === opt.id;
+              const isAnswer = opt.id === phrase.id;
+              let btnStyle = 'bg-slate-950/80 hover:bg-slate-800 border-white/10 text-white';
+              if (questionState.isSubmitted) {
+                if (isAnswer) btnStyle = 'bg-emerald-500/20 border-emerald-400 text-emerald-200';
+                else if (isSelected && !isAnswer) btnStyle = 'bg-rose-500/20 border-rose-400 text-rose-200';
+                else btnStyle = 'bg-slate-950/40 border-white/5 text-slate-500';
+              }
+              return (
+                <button
+                  key={opt.id}
+                  onClick={() => submitListeningOption(opt)}
+                  disabled={questionState.isSubmitted}
+                  className={'p-4 rounded-2xl border-2 text-left font-bold text-sm sm:text-base flex items-center justify-between transition ' + btnStyle}
+                >
+                  <div className="flex items-center gap-3">
+                    <span className="w-7 h-7 rounded-lg bg-white/10 flex items-center justify-center text-xs font-black text-amber-300">
+                      {i + 1}
+                    </span>
+                    <span>{opt.japanese}</span>
+                  </div>
+                  {questionState.isSubmitted && isAnswer && (
+                    <span className="text-emerald-400 font-black text-xs">✓ 正解</span>
+                  )}
+                </button>
+              );
+            })}
           </div>
         )}
 
-        {/* ---- TYPE 3: SPEAKING CHALLENGE (Web Speech API) ---- */}
         {currentQ.type === 'speaking' && questionState && (
           <div className="text-center space-y-4 py-3">
             <div className="inline-block rounded-2xl bg-slate-950/80 border border-white/10 px-5 py-3">
               <div className="text-xs text-slate-400">カタカナ発音ガイド</div>
-              <div className="text-lg sm:text-xl font-black text-amber-300 mt-0.5">{phrase.kana}</div>
+              <div className="text-lg sm:text-xl font-black text-amber-300 mt-0.5">{kanaGuide}</div>
             </div>
 
             <div className="flex flex-col items-center gap-3">
               <button
                 onClick={handleStartMic}
                 disabled={questionState.isSubmitted || questionState.isListeningMic}
-                className={\`w-20 h-20 rounded-full flex items-center justify-center text-white shadow-xl transition \${
-                  questionState.isListeningMic
+                className={
+                  'w-20 h-20 rounded-full flex items-center justify-center text-white shadow-xl transition ' +
+                  (questionState.isListeningMic
                     ? 'bg-red-600 animate-mic'
                     : questionState.isSubmitted
                     ? 'bg-emerald-600'
-                    : 'bg-gradient-to-br from-rose-600 to-amber-500 hover:scale-105 active:scale-95'
-                }\`}
+                    : 'bg-gradient-to-br from-rose-600 to-amber-500 hover:scale-105 active:scale-95')
+                }
               >
                 <Icon name="Mic" className="w-9 h-9" />
               </button>
@@ -1198,36 +1124,34 @@ function QuestModeView({ state, initialSelection, onUpdateState, onGoToCollectio
                   onClick={handleTapClearSpeaking}
                   className="px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 border border-white/15 text-xs font-bold text-slate-200 transition"
                 >
-                  🔊 マイクが使えない環境・声出し確認でクリア（スキップ）
+                  🔊 スキップ / タップで発音クリア（マイクなし環境用）
                 </button>
               </div>
             )}
           </div>
         )}
 
-        {/* ---- FEEDBACK & CULTURAL TIP AFTER SUBMISSION ---- */}
         {questionState && questionState.isSubmitted && (
           <div
-            className={\`rounded-2xl p-4 border animate-pop \${
-              questionState.isCorrect
+            className={
+              'rounded-2xl p-4 border animate-pop ' +
+              (questionState.isCorrect
                 ? 'bg-emerald-950/50 border-emerald-500/40'
-                : 'bg-rose-950/50 border-rose-500/40'
-            }\`}
+                : 'bg-rose-950/50 border-rose-500/40')
+            }
           >
-            <div className="flex items-start justify-between gap-3">
-              <div>
-                <div className={\`text-sm font-black \${questionState.isCorrect ? 'text-emerald-300' : 'text-rose-300'}\`}>
-                  {questionState.isCorrect
-                    ? '🎉 ¡Excelente! 正解！ (+25 XP)'
-                    : \`💡 惜しい！正解は「\${phrase.spanish}」 (+10 XP)\`}
-                </div>
-                <div className="text-xs font-bold text-amber-300 mt-1">
-                  {phrase.spanish} （{phrase.kana}）＝ {phrase.japanese}
-                </div>
-                <p className="text-xs text-slate-300 mt-2 leading-relaxed">
-                  🇪🇸 <strong>現地リアルTips:</strong> {phrase.tip}
-                </p>
+            <div>
+              <div className={'text-sm font-black ' + (questionState.isCorrect ? 'text-emerald-300' : 'text-rose-300')}>
+                {questionState.isCorrect
+                  ? '🎉 ¡Excelente! 正解！ (+25 XP)'
+                  : '💡 惜しい！正解は「' + phrase.spanish + '」 (+10 XP)'}
               </div>
+              <div className="text-xs font-bold text-amber-300 mt-1">
+                {phrase.spanish + ' （' + kanaGuide + '）＝ ' + phrase.japanese}
+              </div>
+              <p className="text-xs text-slate-300 mt-2 leading-relaxed">
+                🇪🇸 <strong>現地リアルTips:</strong> {phrase.tip}
+              </p>
             </div>
 
             <button
@@ -1245,15 +1169,491 @@ function QuestModeView({ state, initialSelection, onUpdateState, onGoToCollectio
   );
 }
 
-// ==================== 3. SMART REVIEW COLLECTION & SRS MODE ====================
-function CollectionAndSrsView({ state, stats, initialMode, onClearInitialMode, onUpdateState }) {
-  const allPhrases = window.VAMOS_DATA.phrases;
+// ==================== 3. GEMINI AI INFINITE ROLEPLAY CHAT VIEW ====================
+function AiRoleplayChatView({ state, onUpdateState, onOpenApiSettings }) {
+  const personas = window.VAMOS_GEMINI.ROLEPLAY_PERSONAS;
+  const [selectedPersonaId, setSelectedPersonaId] = useState('mateo');
+  const currentPersona = personas.find(p => p.id === selectedPersonaId) || personas[0];
+
+  // Store per-persona chat messages & current suggestions
+  const [sessions, setSessions] = useState(() => {
+    const map = {};
+    personas.forEach(p => {
+      map[p.id] = {
+        messages: [
+          {
+            id: 'init_' + p.id,
+            sender: 'ai',
+            spanish: p.initialTurn.ai_spanish,
+            pronunciation: p.initialTurn.ai_pronunciation,
+            japanese: p.initialTurn.ai_japanese,
+            coachFeedback: '',
+            showTranslation: true
+          }
+        ],
+        suggestedReplies: p.initialTurn.suggested_replies
+      };
+    });
+    return map;
+  });
+
+  const [inputText, setInputText] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+  const [errorBanner, setErrorBanner] = useState('');
+  const [toastMsg, setToastMsg] = useState('');
+  const [isListeningMic, setIsListeningMic] = useState(false);
+  const chatBottomRef = useRef(null);
+
+  const activeSession = sessions[selectedPersonaId] || sessions.mateo;
+
+  useEffect(() => {
+    if (chatBottomRef.current) {
+      chatBottomRef.current.scrollIntoView({ behavior: 'smooth' });
+    }
+  }, [activeSession.messages, isLoading]);
+
+  function showToast(msg) {
+    setToastMsg(msg);
+    setTimeout(() => setToastMsg(''), 3200);
+  }
+
+  function toggleMessageTranslation(msgId) {
+    setSessions(prev => ({
+      ...prev,
+      [selectedPersonaId]: {
+        ...prev[selectedPersonaId],
+        messages: prev[selectedPersonaId].messages.map(m =>
+          m.id === msgId ? { ...m, showTranslation: !m.showTranslation } : m
+        )
+      }
+    }));
+  }
+
+  // Add any chat bubble or suggested reply directly to SRS Vocabulary Bank!
+  function handleAddPhraseToSrs(item) {
+    const categoryByPersona =
+      selectedPersonaId === 'mateo' ? 'soccer' : selectedPersonaId === 'carlos' ? 'food' : 'greetings';
+
+    const { state: nextState, isDuplicate } = window.VAMOS_STORAGE.addCustomPhrase(state, {
+      spanish: item.spanish,
+      pronunciation: item.pronunciation || '',
+      japanese: item.japanese || 'AI会話で保存したフレーズ',
+      category: categoryByPersona,
+      tip: currentPersona.name + 'とのAIロールプレイ会話から登録したフレーズ！'
+    });
+    onUpdateState(nextState);
+    window.VAMOS_SPEECH.playSfx('correct', state.soundEnabled);
+    showToast(
+      isDuplicate
+        ? '✅「' + item.spanish + '」を今日の復習リストにセットしました！'
+        : '🎉「' + item.spanish + '」をマイ単語帳（SRS）に追加しました！ (+20 XP)'
+    );
+  }
+
+  async function handleSendUserMessage(rawMessage, meta = {}) {
+    const text = String(rawMessage || '').trim();
+    if (!text || isLoading) return;
+
+    if (!state.geminiApiKey || !state.geminiApiKey.trim()) {
+      setErrorBanner('API_KEY_REQUIRED');
+      return;
+    }
+
+    setErrorBanner('');
+    setInputText('');
+    window.VAMOS_SPEECH.speakSpanish(text);
+
+    const userMsgObj = {
+      id: 'u_' + Date.now(),
+      sender: 'user',
+      spanish: text,
+      pronunciation: meta.pronunciation || '',
+      japanese: meta.japanese || ''
+    };
+
+    const updatedMessages = [...activeSession.messages, userMsgObj];
+    setSessions(prev => ({
+      ...prev,
+      [selectedPersonaId]: {
+        ...prev[selectedPersonaId],
+        messages: updatedMessages
+      }
+    }));
+
+    setIsLoading(true);
+    try {
+      const aiRes = await window.VAMOS_GEMINI.generateRoleplayReply({
+        apiKey: state.geminiApiKey,
+        modelId: state.geminiModel || 'gemini-3.8-flash',
+        personaId: selectedPersonaId,
+        history: updatedMessages,
+        userMessage: text
+      });
+
+      const aiMsgObj = {
+        id: 'ai_' + Date.now(),
+        sender: 'ai',
+        spanish: aiRes.ai_spanish,
+        pronunciation: aiRes.ai_pronunciation,
+        japanese: aiRes.ai_japanese,
+        coachFeedback: aiRes.coach_feedback,
+        showTranslation: true
+      };
+
+      setSessions(prev => ({
+        ...prev,
+        [selectedPersonaId]: {
+          messages: [...updatedMessages, aiMsgObj],
+          suggestedReplies: aiRes.suggested_replies
+        }
+      }));
+
+      // Reward XP for each roleplay turn
+      const nextState = window.VAMOS_STORAGE.touchStudyStreak({
+        ...state,
+        xp: (state.xp || 0) + 15
+      });
+      onUpdateState(nextState);
+
+      if (state.autoSpeak) {
+        setTimeout(() => window.VAMOS_SPEECH.speakSpanish(aiRes.ai_spanish), 200);
+      }
+    } catch (err) {
+      setErrorBanner(err.message || 'AIとの通信中にエラーが発生しました。');
+    } finally {
+      setIsLoading(false);
+    }
+  }
+
+  function handleVoiceInput() {
+    if (isListeningMic || isLoading) return;
+    setIsListeningMic(true);
+    setErrorBanner('');
+
+    window.VAMOS_SPEECH.startSpeechRecognition({
+      onResult: (transcript) => {
+        setIsListeningMic(false);
+        if (transcript) {
+          setInputText(transcript);
+          showToast('🎙️ 音声認識:「' + transcript + '」（送信ボタンまたはそのまま編集できます）');
+        }
+      },
+      onError: (msg) => {
+        setIsListeningMic(false);
+        setErrorBanner(msg);
+      },
+      onEnd: () => {
+        setIsListeningMic(false);
+      }
+    });
+  }
+
+  function handleResetConversation() {
+    const p = currentPersona;
+    setSessions(prev => ({
+      ...prev,
+      [p.id]: {
+        messages: [
+          {
+            id: 'init_' + p.id + '_' + Date.now(),
+            sender: 'ai',
+            spanish: p.initialTurn.ai_spanish,
+            pronunciation: p.initialTurn.ai_pronunciation,
+            japanese: p.initialTurn.ai_japanese,
+            coachFeedback: '',
+            showTranslation: true
+          }
+        ],
+        suggestedReplies: p.initialTurn.suggested_replies
+      }
+    }));
+    window.VAMOS_SPEECH.speakSpanish(p.initialTurn.ai_spanish);
+  }
+
+  return (
+    <div className="max-w-3xl mx-auto space-y-4 pb-8 animate-pop">
+      {/* Top Persona Selector */}
+      <div className="rounded-3xl bg-slate-900/95 border border-white/10 p-4 sm:p-5">
+        <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
+          <div>
+            <span className="text-xs font-extrabold uppercase tracking-wider text-rose-400">
+              GEMINI AI INFINITE ROLEPLAY
+            </span>
+            <h1 className="text-xl sm:text-2xl font-black text-white">
+              無限フリー・ロールプレイ 🗣️
+            </h1>
+          </div>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={handleResetConversation}
+              className="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-xs font-bold text-slate-300 border border-white/10"
+            >
+              🔄 会話を最初から
+            </button>
+            <button
+              onClick={onOpenApiSettings}
+              className="px-3 py-1.5 rounded-xl bg-amber-400/15 hover:bg-amber-400/25 text-xs font-black text-amber-300 border border-amber-400/30"
+            >
+              {'⚙️ API設定 (' + (state.geminiModel || 'gemini-3.8-flash') + ')'}
+            </button>
+          </div>
+        </div>
+
+        {/* 3 Situation / Persona Tabs */}
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+          {personas.map(p => {
+            const active = p.id === selectedPersonaId;
+            return (
+              <button
+                key={p.id}
+                onClick={() => {
+                  setSelectedPersonaId(p.id);
+                  setErrorBanner('');
+                }}
+                className={
+                  'p-3.5 rounded-2xl border text-left transition flex items-start gap-3 ' +
+                  (active
+                    ? 'bg-gradient-to-br ' + p.color + ' text-white border-white/40 shadow-lg'
+                    : 'bg-slate-950/80 text-slate-300 border-white/10 hover:border-white/25')
+                }
+              >
+                <span className="text-2xl shrink-0">{p.avatar}</span>
+                <div className="min-w-0">
+                  <div className="text-[10px] font-extrabold uppercase opacity-90">{p.badge}</div>
+                  <div className="text-sm font-black truncate">{p.name}</div>
+                  <div className="text-[11px] opacity-85 line-clamp-1">{p.role}</div>
+                </div>
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      {toastMsg && (
+        <div className="rounded-2xl bg-emerald-500/20 border border-emerald-400/50 px-4 py-2.5 text-xs font-black text-emerald-200 animate-pop">
+          {toastMsg}
+        </div>
+      )}
+
+      {errorBanner === 'API_KEY_REQUIRED' ? (
+        <div className="rounded-2xl bg-amber-500/20 border border-amber-400/60 p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 animate-pop">
+          <div>
+            <div className="text-sm font-black text-amber-300">🔑 Gemini APIキーを設定すると無限AI会話がスタートします！</div>
+            <p className="text-xs text-slate-200 mt-0.5">
+              設定画面でAPIキーとモデル名（デフォルト: gemini-3.8-flash）を保存してください。
+            </p>
+          </div>
+          <button
+            onClick={onOpenApiSettings}
+            className="px-4 py-2.5 rounded-xl bg-amber-400 text-slate-950 font-black text-xs shrink-0 shadow-lg"
+          >
+            設定画面を開く →
+          </button>
+        </div>
+      ) : errorBanner ? (
+        <div className="rounded-2xl bg-rose-500/20 border border-rose-400/50 p-3.5 text-xs font-bold text-rose-200">
+          {'⚠️ ' + errorBanner}
+        </div>
+      ) : null}
+
+      {/* LINE-Style Chat Window */}
+      <div className="rounded-3xl bg-slate-950/85 border border-white/10 p-4 sm:p-5 space-y-4 max-h-[420px] overflow-y-auto">
+        {activeSession.messages.map(msg => {
+          const isAi = msg.sender === 'ai';
+          return (
+            <div key={msg.id} className="space-y-2 animate-pop">
+              {/* Coach Praise & Advice Banner */}
+              {isAi && msg.coachFeedback && (
+                <div className="mx-auto max-w-md rounded-2xl bg-emerald-950/60 border border-emerald-500/30 px-3.5 py-2 text-xs text-emerald-200 flex items-start gap-2">
+                  <span>👏</span>
+                  <div>
+                    <strong className="text-emerald-300">AIコーチからの一言: </strong>
+                    {msg.coachFeedback}
+                  </div>
+                </div>
+              )}
+
+              <div className={'flex items-start gap-2.5 ' + (isAi ? '' : 'flex-row-reverse')}>
+                <div className="w-10 h-10 rounded-2xl bg-slate-800 border border-white/10 flex items-center justify-center text-xl shrink-0">
+                  {isAi ? currentPersona.avatar : '🧢'}
+                </div>
+
+                <div className="max-w-[82%] space-y-1.5">
+                  <div
+                    className={
+                      'rounded-2xl p-3.5 border ' +
+                      (isAi
+                        ? 'bg-slate-900 border-white/15 text-white'
+                        : 'bg-gradient-to-br from-rose-600/40 to-amber-500/30 border-amber-400/40 text-white')
+                    }
+                  >
+                    {/* Top Row: Speaker TTS button + Toggle Translation + Add to SRS */}
+                    <div className="flex flex-wrap items-center justify-between gap-2 mb-1">
+                      <button
+                        onClick={() => window.VAMOS_SPEECH.speakSpanish(msg.spanish)}
+                        className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-amber-400/20 hover:bg-amber-400/30 text-amber-300 text-xs font-black transition"
+                        title="スペイン語を読み上げ"
+                      >
+                        <Icon name="Volume2" className="w-3.5 h-3.5" />
+                        <span>発音</span>
+                      </button>
+
+                      <div className="flex items-center gap-1.5">
+                        {isAi && (
+                          <button
+                            onClick={() => toggleMessageTranslation(msg.id)}
+                            className="px-2 py-1 rounded-lg bg-white/10 hover:bg-white/15 text-[11px] font-bold text-slate-300"
+                          >
+                            {msg.showTranslation ? '訳・ルビを隠す' : '訳・ルビを見る'}
+                          </button>
+                        )}
+                        <button
+                          onClick={() => handleAddPhraseToSrs(msg)}
+                          className="px-2.5 py-1 rounded-lg bg-emerald-500/20 hover:bg-emerald-500/30 border border-emerald-500/40 text-[11px] font-black text-emerald-300"
+                        >
+                          ＋復習に追加
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Spanish Main Text */}
+                    <div className="text-base sm:text-lg font-black font-sport leading-snug mt-1">
+                      {msg.spanish}
+                    </div>
+
+                    {/* Collapsible Pronunciation & Japanese Translation */}
+                    {(!isAi || msg.showTranslation) && (msg.pronunciation || msg.japanese) && (
+                      <div className="mt-2 pt-2 border-t border-white/10 space-y-0.5">
+                        {msg.pronunciation && (
+                          <div className="text-xs font-bold text-amber-300">{'🗣️ ' + msg.pronunciation}</div>
+                        )}
+                        {msg.japanese && (
+                          <div className="text-xs text-slate-300">{'🇯🇵 ' + msg.japanese}</div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
+          );
+        })}
+
+        {isLoading && (
+          <div className="flex items-center gap-3 text-xs font-bold text-amber-300 animate-pulse p-2">
+            <span className="text-xl">{currentPersona.avatar}</span>
+            <span>{currentPersona.name + ' がスペイン語で返答を考えています...'}</span>
+          </div>
+        )}
+        <div ref={chatBottomRef} />
+      </div>
+
+      {/* Helper Reply Suggestions (お助け返信サジェストボタン 3つ常時表示) */}
+      <div className="rounded-3xl bg-slate-900/95 border border-white/10 p-4 space-y-3">
+        <div className="flex items-center justify-between">
+          <span className="text-xs font-black text-amber-300">
+            💡 お助け返信サジェスト（タップでそのまま返信 / 🔊で発音確認）
+          </span>
+          <span className="text-[11px] text-slate-400">+15 XP / ターン</span>
+        </div>
+
+        <div className="grid grid-cols-1 gap-2">
+          {(activeSession.suggestedReplies || []).map((rep, idx) => (
+            <div
+              key={idx}
+              className="rounded-2xl bg-slate-950/90 border border-white/10 hover:border-amber-400/50 p-3 flex items-center justify-between gap-2 transition"
+            >
+              <button
+                onClick={() => handleSendUserMessage(rep.spanish, rep)}
+                disabled={isLoading}
+                className="flex-1 text-left min-w-0"
+              >
+                <div className="text-[11px] font-bold text-amber-300">{rep.pronunciation}</div>
+                <div className="text-sm sm:text-base font-black text-white font-sport">{rep.spanish}</div>
+                <div className="text-xs text-slate-400">{rep.japanese}</div>
+              </button>
+
+              <div className="flex items-center gap-1.5 shrink-0">
+                <button
+                  onClick={() => window.VAMOS_SPEECH.speakSpanish(rep.spanish)}
+                  className="p-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-amber-300"
+                  title="お手本発音を聞く"
+                >
+                  <Icon name="Volume2" className="w-4 h-4" />
+                </button>
+                <button
+                  onClick={() => handleAddPhraseToSrs(rep)}
+                  className="px-2.5 py-2 rounded-xl bg-emerald-500/15 hover:bg-emerald-500/25 border border-emerald-500/30 text-[11px] font-black text-emerald-300"
+                  title="マイ単語帳に追加"
+                >
+                  ＋復習
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* User Free Input + Microphone Input Bar */}
+        <form
+          onSubmit={e => {
+            e.preventDefault();
+            handleSendUserMessage(inputText);
+          }}
+          className="flex items-center gap-2 pt-2 border-t border-white/10"
+        >
+          <button
+            type="button"
+            onClick={handleVoiceInput}
+            disabled={isLoading}
+            className={
+              'p-3 rounded-2xl border transition shrink-0 ' +
+              (isListeningMic
+                ? 'bg-red-600 text-white border-red-400 animate-mic'
+                : 'bg-slate-800 hover:bg-slate-700 text-amber-300 border-white/15')
+            }
+            title="マイクでスペイン語音声入力"
+          >
+            <Icon name="Mic" className="w-5 h-5" />
+          </button>
+
+          <input
+            type="text"
+            value={inputText}
+            onChange={e => setInputText(e.target.value)}
+            placeholder="スペイン語または日本語でメッセージを入力..."
+            className="flex-1 px-4 py-3 rounded-2xl bg-slate-950 border border-white/15 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-amber-400"
+          />
+
+          <button
+            type="submit"
+            disabled={!inputText.trim() || isLoading}
+            className="px-5 py-3 rounded-2xl bg-gradient-to-r from-rose-600 to-amber-500 text-white font-black text-xs sm:text-sm flex items-center gap-1.5 disabled:opacity-40 shadow-lg"
+          >
+            <Icon name="Send" className="w-4 h-4" />
+            <span>送信</span>
+          </button>
+        </form>
+      </div>
+    </div>
+  );
+}
+
+// ==================== 4. SRS VOCABULARY BANK & GEMINI AI DICTIONARY VIEW ====================
+function VocabAndAiDictView({ state, stats, initialMode, onClearInitialMode, onUpdateState, onOpenApiSettings }) {
+  const allPhrases = useMemo(() => window.VAMOS_STORAGE.getAllPhrases(state), [state]);
   const categories = window.VAMOS_DATA.categories;
 
   const [catFilter, setCatFilter] = useState('all');
-  const [masteryFilter, setMasteryFilter] = useState('all'); // 'all' | 'due' | 'unlearned' | 'learning' | 'mastered'
+  const [masteryFilter, setMasteryFilter] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
-  const [srsSession, setSrsSession] = useState(null); // { queue, currentIndex, isRevealed, selectedOptionId, completedCount, earnedXp }
+  const [srsSession, setSrsSession] = useState(null);
+
+  // Gemini Custom Phrase Generator state
+  const [jpRequest, setJpRequest] = useState('');
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [generatedPreview, setGeneratedPreview] = useState(null);
+  const [genError, setGenError] = useState('');
+  const [addedToast, setAddedToast] = useState('');
 
   useEffect(() => {
     if (initialMode) {
@@ -1262,23 +1662,62 @@ function CollectionAndSrsView({ state, stats, initialMode, onClearInitialMode, o
     }
   }, [initialMode]);
 
+  async function handleGeneratePhrase(customPromptText) {
+    const query = String(customPromptText !== undefined ? customPromptText : jpRequest).trim();
+    if (!query || isGenerating) return;
+
+    if (!state.geminiApiKey || !state.geminiApiKey.trim()) {
+      setGenError('API_KEY_REQUIRED');
+      return;
+    }
+
+    setGenError('');
+    setIsGenerating(true);
+    setGeneratedPreview(null);
+
+    try {
+      const result = await window.VAMOS_GEMINI.generateCustomPhrase({
+        apiKey: state.geminiApiKey,
+        modelId: state.geminiModel || 'gemini-3.8-flash',
+        japaneseRequest: query
+      });
+      setGeneratedPreview(result);
+      window.VAMOS_SPEECH.speakSpanish(result.spanish);
+    } catch (err) {
+      setGenError(err.message || 'フレーズの生成に失敗しました。');
+    } finally {
+      setIsGenerating(false);
+    }
+  }
+
+  function handleSaveGeneratedPhrase() {
+    if (!generatedPreview) return;
+    const { state: nextState, addedPhrase, isDuplicate } = window.VAMOS_STORAGE.addCustomPhrase(state, generatedPreview);
+    onUpdateState(nextState);
+    window.VAMOS_SPEECH.playSfx('fanfare', state.soundEnabled);
+    setAddedToast(
+      isDuplicate
+        ? '✅「' + addedPhrase.spanish + '」は既に登録済みです（本日の復習対象にセットしました）！'
+        : '🎉「' + addedPhrase.spanish + '」を復習コレクション＆パズルに追加しました！ (+20 XP)'
+    );
+    setGeneratedPreview(null);
+    setJpRequest('');
+    setTimeout(() => setAddedToast(''), 4000);
+  }
+
   function startSrsSession(mode = 'due') {
     const dueList = stats.duePhrases;
     let pool = [];
     if (mode === 'due' && dueList.length > 0) {
       pool = shuffleArray(dueList);
     } else {
-      // Practice mode: prioritize seen cards or unlock starter set
       const seenCards = allPhrases.filter(p => state.cards[p.id]?.seen);
       pool = shuffleArray(seenCards.length >= 3 ? seenCards : allPhrases).slice(0, 5);
     }
 
     const queue = pool.map(phrase => {
       const wrong = shuffleArray(allPhrases.filter(p => p.id !== phrase.id)).slice(0, 3);
-      return {
-        phrase,
-        options: shuffleArray([phrase, ...wrong])
-      };
+      return { phrase, options: shuffleArray([phrase, ...wrong]) };
     });
 
     setSrsSession({
@@ -1303,15 +1742,10 @@ function CollectionAndSrsView({ state, stats, initialMode, onClearInitialMode, o
     const isCorrect = opt.id === currentItem.phrase.id;
     window.VAMOS_SPEECH.playSfx(isCorrect ? 'correct' : 'wrong', state.soundEnabled);
     window.VAMOS_SPEECH.speakSpanish(currentItem.phrase.spanish);
-
-    setSrsSession(prev => ({
-      ...prev,
-      selectedOptionId: opt.id,
-      isRevealed: true
-    }));
+    setSrsSession(prev => ({ ...prev, selectedOptionId: opt.id, isRevealed: true }));
   }
 
-  // Evaluate with SRS self-rating ('hard' | 'good' | 'easy')
+  // SRS self-evaluation: 'again' (もう一回) | 'good' (普通) | 'easy' (余裕)
   function handleRateSrsCard(quality) {
     const currentItem = srsSession.queue[srsSession.currentIndex];
     const updatedState = window.VAMOS_STORAGE.recordSrsReview(state, currentItem.phrase.id, quality);
@@ -1344,7 +1778,6 @@ function CollectionAndSrsView({ state, stats, initialMode, onClearInitialMode, o
     }
   }
 
-  // Unlock all 32 cards in collection for instant browsing
   function handleUnlockAllCards() {
     const today = window.VAMOS_STORAGE.getTodayStr();
     const nextCards = { ...state.cards };
@@ -1356,14 +1789,10 @@ function CollectionAndSrsView({ state, stats, initialMode, onClearInitialMode, o
         nextReviewDate: nextCards[p.id]?.nextReviewDate || today
       };
     });
-    onUpdateState({
-      ...state,
-      cards: nextCards
-    });
+    onUpdateState({ ...state, cards: nextCards });
     window.VAMOS_SPEECH.playSfx('fanfare', state.soundEnabled);
   }
 
-  // Filtered trading cards
   const filteredPhrases = useMemo(() => {
     const today = window.VAMOS_STORAGE.getTodayStr();
     return allPhrases.filter(p => {
@@ -1382,17 +1811,18 @@ function CollectionAndSrsView({ state, stats, initialMode, onClearInitialMode, o
 
       if (searchQuery.trim()) {
         const q = searchQuery.toLowerCase();
+        const kana = (p.pronunciation || p.kana || '').toLowerCase();
         const hit =
           p.spanish.toLowerCase().includes(q) ||
           p.japanese.toLowerCase().includes(q) ||
-          p.kana.toLowerCase().includes(q);
+          kana.includes(q);
         if (!hit) return false;
       }
       return true;
     });
   }, [allPhrases, catFilter, masteryFilter, searchQuery, state.cards]);
 
-  // ---- ACTIVE SRS REVIEW QUIZ MODAL/VIEW ----
+  // ---- ACTIVE SRS REVIEW MODE ----
   if (srsSession) {
     if (srsSession.finished) {
       return (
@@ -1400,17 +1830,17 @@ function CollectionAndSrsView({ state, stats, initialMode, onClearInitialMode, o
           <div className="text-5xl">🔥</div>
           <h2 className="text-2xl font-black text-white">SRS スマート復習完了！</h2>
           <p className="text-sm text-slate-300">
-            {srsSession.completedCount}枚のフレーズを復習し、忘却曲線スケジュールを更新しました！
+            {srsSession.completedCount + '枚のフレーズを復習し、忘却曲線スケジュールを更新しました！'}
           </p>
           <div className="rounded-2xl bg-slate-950/90 border border-amber-400/30 p-4 max-w-xs mx-auto">
             <div className="text-xs text-slate-400 font-bold">獲得復習ボーナス</div>
-            <div className="text-2xl font-black text-amber-300 font-sport mt-1">+{srsSession.earnedXp} XP</div>
+            <div className="text-2xl font-black text-amber-300 font-sport mt-1">{'+' + srsSession.earnedXp + ' XP'}</div>
           </div>
           <button
             onClick={() => setSrsSession(null)}
             className="w-full py-3.5 rounded-2xl bg-gradient-to-r from-amber-400 to-orange-500 text-slate-950 font-black text-sm shadow-lg"
           >
-            トレカ図鑑へ戻る
+            単語帳＆AI辞書へ戻る
           </button>
         </div>
       );
@@ -1428,17 +1858,17 @@ function CollectionAndSrsView({ state, stats, initialMode, onClearInitialMode, o
             className="px-3 py-2 rounded-xl bg-slate-900 border border-white/10 text-xs font-bold text-slate-300 flex items-center gap-1.5"
           >
             <Icon name="ArrowLeft" className="w-4 h-4" />
-            <span>図鑑に戻る</span>
+            <span>一覧に戻る</span>
           </button>
           <span className="text-xs font-black text-amber-300">
-            SRS REVIEW {srsSession.currentIndex + 1} / {srsSession.queue.length}
+            {'SRS REVIEW ' + (srsSession.currentIndex + 1) + ' / ' + srsSession.queue.length}
           </span>
         </div>
 
         <div className="rounded-3xl bg-slate-900/95 border border-amber-400/40 p-6 shadow-2xl space-y-5">
           <div className="flex items-center justify-between">
             <span className="text-xs font-black px-3 py-1 rounded-full bg-amber-400/20 text-amber-300 border border-amber-400/30">
-              現在 Lv.{cardState.masteryLevel} / 5
+              {'現在 Lv.' + cardState.masteryLevel + ' / 5'}
             </span>
             <button
               onClick={() => window.VAMOS_SPEECH.speakSpanish(phrase.spanish)}
@@ -1450,7 +1880,7 @@ function CollectionAndSrsView({ state, stats, initialMode, onClearInitialMode, o
           </div>
 
           <div className="text-center py-4">
-            <div className="text-xs font-bold text-amber-300">{phrase.kana}</div>
+            <div className="text-xs font-bold text-amber-300">{phrase.pronunciation || phrase.kana}</div>
             <h2 className="text-2xl sm:text-3xl font-black text-white font-sport mt-1">{phrase.spanish}</h2>
             <p className="text-xs text-slate-400 mt-2">このスペイン語の意味を選ぼう！</p>
           </div>
@@ -1470,7 +1900,7 @@ function CollectionAndSrsView({ state, stats, initialMode, onClearInitialMode, o
                   key={opt.id}
                   onClick={() => handleSelectSrsOption(opt)}
                   disabled={srsSession.isRevealed}
-                  className={\`w-full p-3.5 rounded-2xl border-2 text-left font-bold text-sm transition \${cls}\`}
+                  className={'w-full p-3.5 rounded-2xl border-2 text-left font-bold text-sm transition ' + cls}
                 >
                   {opt.japanese}
                 </button>
@@ -1478,33 +1908,32 @@ function CollectionAndSrsView({ state, stats, initialMode, onClearInitialMode, o
             })}
           </div>
 
-          {/* SRS Self-Evaluation Buttons after reveal */}
           {srsSession.isRevealed && (
             <div className="pt-3 border-t border-white/10 space-y-3 animate-pop">
               <div className="text-xs text-center font-bold text-slate-300">
-                記憶の手応えはどうだった？（次回の出題日が変わるよ！）
+                自己評価を選んで次回の出題日（SRS忘却曲線）を更新しよう！
               </div>
               <div className="grid grid-cols-3 gap-2.5">
                 <button
-                  onClick={() => handleRateSrsCard('hard')}
+                  onClick={() => handleRateSrsCard('again')}
                   className="p-3 rounded-2xl bg-rose-500/20 hover:bg-rose-500/30 border border-rose-500/40 text-center transition active:scale-95"
                 >
-                  <div className="text-xs font-black text-rose-300">😓 難しい</div>
-                  <div className="text-[10px] text-slate-400 mt-0.5">明日もう1回</div>
+                  <div className="text-xs font-black text-rose-300">😓 もう一回</div>
+                  <div className="text-[10px] text-slate-400 mt-0.5">1日後に再出題</div>
                 </button>
                 <button
                   onClick={() => handleRateSrsCard('good')}
                   className="p-3 rounded-2xl bg-sky-500/20 hover:bg-sky-500/30 border border-sky-500/40 text-center transition active:scale-95"
                 >
                   <div className="text-xs font-black text-sky-300">👍 普通</div>
-                  <div className="text-[10px] text-slate-400 mt-0.5">Lv.+1 / 数日後</div>
+                  <div className="text-[10px] text-slate-400 mt-0.5">Lv.+1 (3〜7日後)</div>
                 </button>
                 <button
                   onClick={() => handleRateSrsCard('easy')}
                   className="p-3 rounded-2xl bg-emerald-500/20 hover:bg-emerald-500/30 border border-emerald-500/40 text-center transition active:scale-95"
                 >
-                  <div className="text-xs font-black text-emerald-300">⚡ 簡単！</div>
-                  <div className="text-[10px] text-slate-400 mt-0.5">Lv.+2 / 長期記憶</div>
+                  <div className="text-xs font-black text-emerald-300">⚡ 余裕！</div>
+                  <div className="text-[10px] text-slate-400 mt-0.5">Lv.+2 (7〜30日後)</div>
                 </button>
               </div>
             </div>
@@ -1514,16 +1943,152 @@ function CollectionAndSrsView({ state, stats, initialMode, onClearInitialMode, o
     );
   }
 
-  // ---- VOCABULARY TRADING CARD COLLECTION VIEW ----
   return (
     <div className="space-y-6 pb-8 animate-pop">
-      {/* Header & SRS Launch Bar */}
+      {/* GEMINI API FEATURE 2: CUSTOM PHRASE GENERATOR ("現地で知りたい言葉" AIリクエスト機能) */}
+      <div className="rounded-3xl bg-gradient-to-br from-slate-900 via-slate-900 to-amber-950/40 border border-amber-400/40 p-5 sm:p-6 shadow-xl space-y-4">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <div>
+            <span className="text-xs font-extrabold uppercase tracking-wider px-2.5 py-0.5 rounded-full bg-amber-400/20 text-amber-300 border border-amber-400/30">
+              GEMINI AI CUSTOM PHRASE GENERATOR
+            </span>
+            <h2 className="text-xl font-black text-white mt-1.5">
+              「現地で知りたい言葉」AIリクエスト辞書 ✨
+            </h2>
+            <p className="text-xs text-slate-300 mt-0.5">
+              「これスペイン語でなんて言うんだろう？」と思った日本語を入力すると、ネイティブ表現・発音・チャンクパズルを自動生成して単語帳に追加できます！
+            </p>
+          </div>
+        </div>
+
+        {/* Quick Example Chips */}
+        <div className="flex items-center gap-2 overflow-x-auto pb-1">
+          <span className="text-[11px] font-bold text-slate-400 shrink-0">例をタップ:</span>
+          {[
+            '逆サイドに展開しろ！',
+            'オフサイドじゃないよ！',
+            '生ハムのサンドイッチをください',
+            'この地下鉄はスタジアムに行きますか？'
+          ].map((sample, idx) => (
+            <button
+              key={idx}
+              onClick={() => {
+                setJpRequest(sample);
+                handleGeneratePhrase(sample);
+              }}
+              className="px-3 py-1 rounded-full bg-slate-800 hover:bg-slate-700 border border-white/10 text-xs font-bold text-amber-300 shrink-0 transition"
+            >
+              {sample}
+            </button>
+          ))}
+        </div>
+
+        {/* Input Form */}
+        <form
+          onSubmit={e => {
+            e.preventDefault();
+            handleGeneratePhrase();
+          }}
+          className="flex flex-col sm:flex-row gap-2.5"
+        >
+          <input
+            type="text"
+            value={jpRequest}
+            onChange={e => setJpRequest(e.target.value)}
+            placeholder="知りたい日本語を入力（例：逆サイドに展開しろ！ / おなかいっぱいです）"
+            className="flex-1 px-4 py-3 rounded-2xl bg-slate-950 border border-white/15 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-amber-400"
+          />
+          <button
+            type="submit"
+            disabled={!jpRequest.trim() || isGenerating}
+            className="px-6 py-3 rounded-2xl bg-gradient-to-r from-amber-400 to-orange-500 text-slate-950 font-black text-sm flex items-center justify-center gap-2 shrink-0 disabled:opacity-40 shadow-lg shadow-amber-500/20"
+          >
+            <Icon name="Sparkles" className="w-4 h-4" />
+            <span>{isGenerating ? 'AI生成中...' : 'スペイン語をAI生成'}</span>
+          </button>
+        </form>
+
+        {genError === 'API_KEY_REQUIRED' ? (
+          <div className="rounded-2xl bg-amber-500/20 border border-amber-400/60 p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div className="text-xs font-bold text-amber-200">
+              🔑 AI辞書を使うには、設定画面でGemini APIキーを保存してください。
+            </div>
+            <button
+              onClick={onOpenApiSettings}
+              className="px-4 py-2 rounded-xl bg-amber-400 text-slate-950 font-black text-xs shrink-0"
+            >
+              APIキーを設定する →
+            </button>
+          </div>
+        ) : genError ? (
+          <div className="rounded-2xl bg-rose-500/20 border border-rose-400/50 p-3 text-xs font-bold text-rose-200">
+            {'⚠️ ' + genError}
+          </div>
+        ) : null}
+
+        {addedToast && (
+          <div className="rounded-2xl bg-emerald-500/20 border border-emerald-400/50 p-3 text-xs font-black text-emerald-200 animate-pop">
+            {addedToast}
+          </div>
+        )}
+
+        {/* Generated Phrase Preview Card */}
+        {generatedPreview && (
+          <div className="rounded-2xl bg-slate-950/95 border-2 border-amber-400 p-4 sm:p-5 space-y-3 animate-pop">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-black px-3 py-0.5 rounded-full bg-amber-400/20 text-amber-300 border border-amber-400/30">
+                {'カテゴリ: ' + generatedPreview.categoryLabel}
+              </span>
+              <button
+                onClick={() => window.VAMOS_SPEECH.speakSpanish(generatedPreview.spanish)}
+                className="px-3 py-1.5 rounded-xl bg-amber-400 text-slate-950 font-black text-xs flex items-center gap-1.5"
+              >
+                <Icon name="Volume2" className="w-4 h-4" />
+                <span>発音を聞く</span>
+              </button>
+            </div>
+
+            <div>
+              <div className="text-xs font-bold text-amber-300">{generatedPreview.pronunciation}</div>
+              <div className="text-2xl font-black text-white font-sport mt-0.5">{generatedPreview.spanish}</div>
+              <div className="text-sm font-bold text-slate-200 mt-1">{generatedPreview.japanese}</div>
+            </div>
+
+            <div className="flex flex-wrap items-center gap-1.5">
+              <span className="text-[11px] text-slate-400 mr-1">パズル用チャンク:</span>
+              {generatedPreview.chunks.map((c, i) => (
+                <span
+                  key={i}
+                  onClick={() => window.VAMOS_SPEECH.speakSpanish(c)}
+                  className="cursor-pointer px-2.5 py-1 rounded-lg bg-slate-800 border border-white/10 text-xs font-black text-amber-300 font-sport"
+                >
+                  {c}
+                </span>
+              ))}
+            </div>
+
+            <div className="text-xs text-slate-300 bg-slate-900/90 rounded-xl p-3 border border-white/5">
+              🇪🇸 <strong>ワンポイント解説:</strong> {generatedPreview.tip}
+            </div>
+
+            <button
+              onClick={handleSaveGeneratedPhrase}
+              className="w-full py-3.5 rounded-xl bg-gradient-to-r from-emerald-400 to-teal-500 text-slate-950 font-black text-sm flex items-center justify-center gap-2 shadow-lg active:scale-95"
+            >
+              <Icon name="Plus" className="w-4 h-4" />
+              <span>復習コレクションに追加！（SRS＆クエストパズルに登録）</span>
+            </button>
+          </div>
+        )}
+      </div>
+
+      {/* SRS VOCABULARY BANK HEADER */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-slate-900/90 border border-white/10 rounded-3xl p-5">
         <div>
-          <span className="text-xs font-extrabold uppercase tracking-wider text-amber-400">TRADING CARD VOCABULARY BANK</span>
-          <h1 className="text-2xl font-black text-white mt-0.5">スマート復習コレクション 🃏</h1>
+          <span className="text-xs font-extrabold uppercase tracking-wider text-amber-400">SRS VOCABULARY BANK</span>
+          <h2 className="text-xl font-black text-white mt-0.5">スマート復習コレクション 🃏</h2>
           <p className="text-xs text-slate-300 mt-1">
-            カードをタップするとスペイン語音声が再生！現在 <strong className="text-amber-300">{stats.seenCount} / {stats.totalPhrases}枚</strong> が図鑑に登録済み。
+            カードをタップするとスペイン語音声が再生！現在 <strong className="text-amber-300">{stats.seenCount + ' / ' + stats.totalPhrases + '枚'}</strong> が登録済み（AI追加: {stats.customCount}枚）。
           </p>
         </div>
 
@@ -1533,7 +2098,7 @@ function CollectionAndSrsView({ state, stats, initialMode, onClearInitialMode, o
               onClick={handleUnlockAllCards}
               className="px-3.5 py-2.5 rounded-2xl bg-slate-800 hover:bg-slate-700 border border-white/15 text-xs font-bold text-slate-200 transition"
             >
-              🔓 全32枚を図鑑解放
+              🔓 全カードを図鑑解放
             </button>
           )}
           <button
@@ -1543,7 +2108,7 @@ function CollectionAndSrsView({ state, stats, initialMode, onClearInitialMode, o
             <Icon name="Sparkles" className="w-4 h-4" />
             <span>
               {stats.duePhrases.length > 0
-                ? \`SRS期限カード復習 (\${stats.duePhrases.length}件)\`
+                ? 'SRS期限カード復習 (' + stats.duePhrases.length + '件)'
                 : 'SRS復習モードを開始'}
             </span>
           </button>
@@ -1552,7 +2117,6 @@ function CollectionAndSrsView({ state, stats, initialMode, onClearInitialMode, o
 
       {/* Filters & Search */}
       <div className="space-y-3">
-        {/* Search Input */}
         <div className="relative">
           <div className="absolute inset-y-0 left-3.5 flex items-center text-slate-400 pointer-events-none">
             <Icon name="Search" className="w-4 h-4" />
@@ -1566,38 +2130,34 @@ function CollectionAndSrsView({ state, stats, initialMode, onClearInitialMode, o
           />
         </div>
 
-        {/* Category Pills */}
         <div className="flex items-center gap-2 overflow-x-auto pb-1">
           <button
             onClick={() => setCatFilter('all')}
-            className={\`px-3.5 py-1.5 rounded-full text-xs font-black shrink-0 border transition \${
-              catFilter === 'all'
-                ? 'bg-amber-400 text-slate-950 border-amber-400'
-                : 'bg-slate-900 text-slate-300 border-white/10'
-            }\`}
+            className={
+              'px-3.5 py-1.5 rounded-full text-xs font-black shrink-0 border transition ' +
+              (catFilter === 'all' ? 'bg-amber-400 text-slate-950 border-amber-400' : 'bg-slate-900 text-slate-300 border-white/10')
+            }
           >
-            全カテゴリ ({allPhrases.length})
+            {'全カテゴリ (' + allPhrases.length + ')'}
           </button>
           {categories.map(c => (
             <button
               key={c.id}
               onClick={() => setCatFilter(c.id)}
-              className={\`px-3.5 py-1.5 rounded-full text-xs font-black shrink-0 border transition \${
-                catFilter === c.id
-                  ? 'bg-amber-400 text-slate-950 border-amber-400'
-                  : 'bg-slate-900 text-slate-300 border-white/10'
-              }\`}
+              className={
+                'px-3.5 py-1.5 rounded-full text-xs font-black shrink-0 border transition ' +
+                (catFilter === c.id ? 'bg-amber-400 text-slate-950 border-amber-400' : 'bg-slate-900 text-slate-300 border-white/10')
+              }
             >
               {c.name}
             </button>
           ))}
         </div>
 
-        {/* Mastery Level Pills */}
         <div className="flex items-center gap-2 overflow-x-auto pb-1">
           {[
             { id: 'all', label: 'すべての状態' },
-            { id: 'due', label: \`⚡ 今日の復習対象 (\${stats.duePhrases.length})\` },
+            { id: 'due', label: '⚡ 今日の復習対象 (' + stats.duePhrases.length + ')' },
             { id: 'unlearned', label: '未習得 (Lv.0)' },
             { id: 'learning', label: '🔥 学習中 (Lv.1-3)' },
             { id: 'mastered', label: '👑 マスター (Lv.4-5)' }
@@ -1605,11 +2165,10 @@ function CollectionAndSrsView({ state, stats, initialMode, onClearInitialMode, o
             <button
               key={f.id}
               onClick={() => setMasteryFilter(f.id)}
-              className={\`px-3 py-1.5 rounded-xl text-xs font-bold shrink-0 border transition \${
-                masteryFilter === f.id
-                  ? 'bg-rose-600 text-white border-rose-400'
-                  : 'bg-slate-900/70 text-slate-400 border-white/10'
-              }\`}
+              className={
+                'px-3 py-1.5 rounded-xl text-xs font-bold shrink-0 border transition ' +
+                (masteryFilter === f.id ? 'bg-rose-600 text-white border-rose-400' : 'bg-slate-900/70 text-slate-400 border-white/10')
+              }
             >
               {f.label}
             </button>
@@ -1624,11 +2183,7 @@ function CollectionAndSrsView({ state, stats, initialMode, onClearInitialMode, o
           const catObj = categories.find(cat => cat.id === p.category);
           const isMaster = c.masteryLevel >= 4;
           const isLearning = c.masteryLevel >= 1 && c.masteryLevel <= 3;
-          const cardClass = isMaster
-            ? 'card-master'
-            : isLearning
-            ? 'card-learning'
-            : 'card-unlearned';
+          const cardClass = isMaster ? 'card-master' : isLearning ? 'card-learning' : 'card-unlearned';
 
           return (
             <div
@@ -1637,29 +2192,31 @@ function CollectionAndSrsView({ state, stats, initialMode, onClearInitialMode, o
                 window.VAMOS_SPEECH.playSfx('tap', state.soundEnabled);
                 window.VAMOS_SPEECH.speakSpanish(p.spanish);
               }}
-              className={\`trading-card cursor-pointer rounded-3xl p-5 flex flex-col justify-between \${cardClass}\`}
+              className={'trading-card cursor-pointer rounded-3xl p-5 flex flex-col justify-between ' + cardClass}
             >
               <div>
                 <div className="flex items-center justify-between gap-2 mb-3">
-                  <span className={\`text-[11px] font-black px-2.5 py-0.5 rounded-full border \${catObj?.badgeBg || ''}\`}>
-                    {catObj?.name}
-                  </span>
                   <div className="flex items-center gap-1.5">
-                    {!c.seen && (
-                      <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-slate-800 text-slate-400">
-                        クエスト未登場
+                    <span className={'text-[11px] font-black px-2.5 py-0.5 rounded-full border ' + (catObj?.badgeBg || '')}>
+                      {catObj?.name}
+                    </span>
+                    {p.isCustom && (
+                      <span className="text-[10px] font-black px-2 py-0.5 rounded-full bg-amber-400/20 text-amber-300 border border-amber-400/40">
+                        ✨ AI追加
                       </span>
                     )}
-                    <span className={\`text-xs font-black font-sport \${
-                      isMaster ? 'text-amber-300' : isLearning ? 'text-rose-300' : 'text-slate-500'
-                    }\`}>
-                      {isMaster ? '👑 MASTER' : isLearning ? '🔥 LEARNING' : 'Lv.0'}
-                    </span>
                   </div>
+                  <span
+                    className={
+                      'text-xs font-black font-sport ' +
+                      (isMaster ? 'text-amber-300' : isLearning ? 'text-rose-300' : 'text-slate-500')
+                    }
+                  >
+                    {isMaster ? '👑 MASTER' : isLearning ? '🔥 LEARNING' : 'Lv.0'}
+                  </span>
                 </div>
 
-                {/*Katakana Ruby + Spanish + Japanese*/}
-                <div className="text-xs font-bold text-amber-300/95 tracking-wide">{p.kana}</div>
+                <div className="text-xs font-bold text-amber-300/95 tracking-wide">{p.pronunciation || p.kana}</div>
                 <h3 className="text-xl font-black text-white font-sport mt-0.5 flex items-center justify-between gap-2">
                   <span>{p.spanish}</span>
                   <Icon name="Volume2" className="w-5 h-5 text-amber-400 shrink-0" />
@@ -1668,21 +2225,17 @@ function CollectionAndSrsView({ state, stats, initialMode, onClearInitialMode, o
                 <p className="text-xs text-slate-400 mt-2 line-clamp-2">{p.tip}</p>
               </div>
 
-              {/* SRS Footer */}
               <div className="mt-4 pt-3 border-t border-white/10 flex items-center justify-between text-[11px]">
                 <div className="flex items-center gap-1">
                   {[1, 2, 3, 4, 5].map(star => (
-                    <span
-                      key={star}
-                      className={star <= c.masteryLevel ? 'text-amber-400' : 'text-slate-700'}
-                    >
+                    <span key={star} className={star <= c.masteryLevel ? 'text-amber-400' : 'text-slate-700'}>
                       ★
                     </span>
                   ))}
-                  <span className="text-slate-400 ml-1">Lv.{c.masteryLevel}/5</span>
+                  <span className="text-slate-400 ml-1">{'Lv.' + c.masteryLevel + '/5'}</span>
                 </div>
                 <div className="text-slate-400">
-                  {c.nextReviewDate ? \`次回: \${c.nextReviewDate}\` : 'タップで発音'}
+                  {c.nextReviewDate ? '次回: ' + c.nextReviewDate : 'タップで発音'}
                 </div>
               </div>
             </div>
@@ -1693,336 +2246,30 @@ function CollectionAndSrsView({ state, stats, initialMode, onClearInitialMode, o
   );
 }
 
-// ==================== 4. AI ROLEPLAY CHALLENGE COMPONENT ====================
-function RoleplayModeView({ state, onUpdateState }) {
-  const scenarios = window.VAMOS_DATA.roleplays;
-  const [activeScenario, setActiveScenario] = useState(null);
-  const [turnIndex, setTurnIndex] = useState(0);
-  const [chatHistory, setChatHistory] = useState([]);
-  const [turnFeedback, setTurnFeedback] = useState(null); // { isCorrect, text, selectedOption }
-  const [isCompleted, setIsCompleted] = useState(false);
-  const [isListeningMic, setIsListeningMic] = useState(false);
-  const [micHint, setMicHint] = useState('');
-
-  function startScenario(sc) {
-    setActiveScenario(sc);
-    setTurnIndex(0);
-    setTurnFeedback(null);
-    setIsCompleted(false);
-    setMicHint('');
-    const firstTurn = sc.turns[0];
-    setChatHistory([
-      {
-        sender: 'partner',
-        spanish: firstTurn.partnerSpanish,
-        kana: firstTurn.partnerKana,
-        japanese: firstTurn.partnerJapanese
-      }
-    ]);
-    if (state.autoSpeak) {
-      setTimeout(() => window.VAMOS_SPEECH.speakSpanish(firstTurn.partnerSpanish), 250);
-    }
-  }
-
-  function handleChooseOption(opt) {
-    if (turnFeedback && turnFeedback.isCorrect) return;
-    window.VAMOS_SPEECH.speakSpanish(opt.spanish);
-
-    if (opt.correct) {
-      window.VAMOS_SPEECH.playSfx('correct', state.soundEnabled);
-      setTurnFeedback({
-        isCorrect: true,
-        text: opt.feedback,
-        selectedOption: opt
-      });
-      setChatHistory(prev => [
-        ...prev,
-        {
-          sender: 'player',
-          spanish: opt.spanish,
-          kana: opt.kana,
-          japanese: opt.japanese
-        }
-      ]);
-    } else {
-      window.VAMOS_SPEECH.playSfx('wrong', state.soundEnabled);
-      setTurnFeedback({
-        isCorrect: false,
-        text: opt.feedback,
-        selectedOption: opt
-      });
-    }
-  }
-
-  // Voice input in Roleplay Mode!
-  function handleRoleplayVoiceInput() {
-    if (!activeScenario) return;
-    const currentTurn = activeScenario.turns[turnIndex];
-    const correctOption = currentTurn.options.find(o => o.correct);
-
-    setIsListeningMic(true);
-    setMicHint('🎙️ スペイン語の返答を聞き取り中...');
-
-    window.VAMOS_SPEECH.startSpeechRecognition({
-      onResult: (transcript) => {
-        setIsListeningMic(false);
-        const ev = window.VAMOS_SPEECH.evaluatePronunciation(correctOption.spanish, transcript);
-        if (ev.isMatch) {
-          setMicHint(\`🎉 音声認識成功！「\${transcript}」\`);
-          handleChooseOption(correctOption);
-        } else {
-          setMicHint(\`聞き取り:「\${transcript}」— 下の選択肢をタップするかもう一度話してみてね！\`);
-        }
-      },
-      onError: (msg) => {
-        setIsListeningMic(false);
-        setMicHint(msg);
-      },
-      onEnd: () => {
-        setIsListeningMic(false);
-      }
-    });
-  }
-
-  function handleNextTurn() {
-    const nextIdx = turnIndex + 1;
-    if (nextIdx >= activeScenario.turns.length) {
-      window.VAMOS_SPEECH.playSfx('fanfare', state.soundEnabled);
-      const nextState = window.VAMOS_STORAGE.touchStudyStreak({
-        ...state,
-        xp: (state.xp || 0) + activeScenario.xpReward,
-        completedRoleplays: {
-          ...state.completedRoleplays,
-          [activeScenario.id]: true
-        }
-      });
-      onUpdateState(nextState);
-      setIsCompleted(true);
-    } else {
-      const nextTurn = activeScenario.turns[nextIdx];
-      setTurnIndex(nextIdx);
-      setTurnFeedback(null);
-      setMicHint('');
-      setChatHistory(prev => [
-        ...prev,
-        {
-          sender: 'partner',
-          spanish: nextTurn.partnerSpanish,
-          kana: nextTurn.partnerKana,
-          japanese: nextTurn.partnerJapanese
-        }
-      ]);
-      if (state.autoSpeak) {
-        setTimeout(() => window.VAMOS_SPEECH.speakSpanish(nextTurn.partnerSpanish), 250);
-      }
-    }
-  }
-
-  if (!activeScenario) {
-    return (
-      <div className="space-y-6 pb-8 animate-pop">
-        <div>
-          <span className="text-xs font-extrabold uppercase tracking-wider text-rose-400">3-TURN AI ROLEPLAY</span>
-          <h1 className="text-2xl font-black text-white mt-0.5">AIロールプレイ・ミニチャレンジ 🗣️</h1>
-          <p className="text-xs sm:text-sm text-slate-300 mt-1">
-            スペイン現地のリアルな3ターン会話シミュレーション！選択肢タップまたはマイク発音で会話を成立させよう。
-          </p>
-        </div>
-
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          {scenarios.map(sc => {
-            const cleared = state.completedRoleplays[sc.id];
-            return (
-              <div
-                key={sc.id}
-                className="rounded-3xl bg-slate-900/90 border border-white/10 p-5 flex flex-col justify-between hover:border-rose-400/40 transition"
-              >
-                <div>
-                  <div className="flex items-center justify-between mb-3">
-                    <span className="text-3xl">{sc.partnerAvatar}</span>
-                    <span className={\`text-xs font-black px-3 py-1 rounded-full \${
-                      cleared
-                        ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'
-                        : 'bg-amber-500/20 text-amber-300 border border-amber-500/30'
-                    }\`}>
-                      {cleared ? '✓ 達成済み' : \`+\${sc.xpReward} XP\`}
-                    </span>
-                  </div>
-                  <div className="text-xs font-bold text-rose-400">{sc.location}</div>
-                  <h3 className="text-lg font-black text-white mt-1">{sc.title}</h3>
-                  <p className="text-xs text-slate-300 mt-1.5">{sc.subtitle}</p>
-                  <div className="mt-3 text-xs text-slate-400">
-                    相手: <strong className="text-white">{sc.partnerName}</strong>（3ターン対話）
-                  </div>
-                </div>
-
-                <button
-                  onClick={() => startScenario(sc)}
-                  className="w-full mt-5 py-3.5 rounded-2xl bg-gradient-to-r from-rose-600 to-amber-500 text-white font-black text-sm shadow-lg transition active:scale-95"
-                >
-                  会話をスタートする 🗣️
-                </button>
-              </div>
-            );
-          })}
-        </div>
-      </div>
-    );
-  }
-
-  const currentTurn = activeScenario.turns[turnIndex];
-
-  return (
-    <div className="max-w-2xl mx-auto space-y-5 pb-8 animate-pop">
-      {/* Header */}
-      <div className="flex items-center justify-between bg-slate-900/90 border border-white/10 rounded-2xl p-4">
-        <div className="flex items-center gap-3">
-          <button
-            onClick={() => setActiveScenario(null)}
-            className="p-2 rounded-xl bg-slate-800 text-slate-300 hover:text-white"
-          >
-            <Icon name="ArrowLeft" className="w-4 h-4" />
-          </button>
-          <div>
-            <div className="text-xs font-bold text-amber-300">{activeScenario.location}</div>
-            <h2 className="text-sm sm:text-base font-black text-white">{activeScenario.title}</h2>
-          </div>
-        </div>
-        <span className="text-xs font-black px-3 py-1 rounded-full bg-rose-500/20 text-rose-300 border border-rose-500/30">
-          TURN {Math.min(turnIndex + 1, 3)} / 3
-        </span>
-      </div>
-
-      {/* Chat Timeline */}
-      <div className="space-y-3 bg-slate-950/70 border border-white/10 rounded-3xl p-4 sm:p-5">
-        {chatHistory.map((msg, i) => {
-          const isPartner = msg.sender === 'partner';
-          return (
-            <div
-              key={i}
-              className={\`flex items-start gap-3 animate-pop \${isPartner ? '' : 'flex-row-reverse'}\`}
-            >
-              <div className="w-10 h-10 rounded-2xl bg-slate-800 border border-white/10 flex items-center justify-center text-xl shrink-0">
-                {isPartner ? activeScenario.partnerAvatar : '🧢'}
-              </div>
-              <div
-                onClick={() => window.VAMOS_SPEECH.speakSpanish(msg.spanish)}
-                className={\`cursor-pointer max-w-[82%] rounded-2xl p-3.5 border \${
-                  isPartner
-                    ? 'bg-slate-900 border-white/10 text-white'
-                    : 'bg-gradient-to-br from-rose-600/30 to-amber-500/20 border-amber-400/40 text-white'
-                }\`}
-              >
-                <div className="flex items-center justify-between gap-2 text-[11px] text-amber-300 font-bold">
-                  <span>{msg.kana}</span>
-                  <Icon name="Volume2" className="w-3.5 h-3.5 shrink-0" />
-                </div>
-                <div className="text-base font-black font-sport mt-0.5">{msg.spanish}</div>
-                <div className="text-xs text-slate-300 mt-1">{msg.japanese}</div>
-              </div>
-            </div>
-          );
-        })}
-      </div>
-
-      {/* Active Turn Response Selector */}
-      {!isCompleted ? (
-        <div className="rounded-3xl bg-slate-900/95 border border-white/10 p-5 space-y-4">
-          <div className="flex items-center justify-between gap-2">
-            <div className="text-xs font-bold text-amber-300">
-              💡 ヒント: {currentTurn.hint}
-            </div>
-            <button
-              onClick={handleRoleplayVoiceInput}
-              disabled={isListeningMic}
-              className={\`px-3 py-1.5 rounded-xl text-xs font-black flex items-center gap-1.5 border transition \${
-                isListeningMic
-                  ? 'bg-red-600 text-white border-red-400 animate-pulse'
-                  : 'bg-slate-800 hover:bg-slate-700 text-amber-300 border-amber-400/30'
-              }\`}
-            >
-              <Icon name="Mic" className="w-3.5 h-3.5" />
-              <span>{isListeningMic ? '聞き取り中...' : '声で返答する'}</span>
-            </button>
-          </div>
-
-          {micHint && (
-            <div className="text-xs font-bold text-amber-300 bg-slate-950/80 rounded-xl p-2.5 border border-white/10">
-              {micHint}
-            </div>
-          )}
-
-          <div className="space-y-2.5">
-            {currentTurn.options.map((opt, idx) => (
-              <button
-                key={idx}
-                onClick={() => handleChooseOption(opt)}
-                className="w-full p-4 rounded-2xl bg-slate-950/85 hover:bg-slate-800 border border-white/10 hover:border-amber-400/40 text-left transition active:scale-99"
-              >
-                <div className="text-[11px] font-bold text-amber-300">{opt.kana}</div>
-                <div className="text-base font-black text-white font-sport mt-0.5">{opt.spanish}</div>
-                <div className="text-xs text-slate-400 mt-0.5">{opt.japanese}</div>
-              </button>
-            ))}
-          </div>
-
-          {turnFeedback && (
-            <div
-              className={\`rounded-2xl p-4 border animate-pop \${
-                turnFeedback.isCorrect
-                  ? 'bg-emerald-950/60 border-emerald-500/40 text-emerald-200'
-                  : 'bg-rose-950/60 border-rose-500/40 text-rose-200'
-              }\`}
-            >
-              <div className="text-xs sm:text-sm font-bold">{turnFeedback.text}</div>
-              {turnFeedback.isCorrect && (
-                <button
-                  onClick={handleNextTurn}
-                  className="w-full mt-3 py-3 rounded-xl bg-gradient-to-r from-amber-400 to-orange-500 text-slate-950 font-black text-xs sm:text-sm"
-                >
-                  {turnIndex + 1 < activeScenario.turns.length
-                    ? '次のターンへ進む →'
-                    : 'ロールプレイ達成！報酬を受け取る 🏆'}
-                </button>
-              )}
-            </div>
-          )}
-        </div>
-      ) : (
-        <div className="rounded-3xl bg-gradient-to-br from-amber-500/20 to-rose-500/20 border border-amber-400/50 p-6 text-center space-y-4 animate-pop">
-          <div className="text-4xl">🎉</div>
-          <h3 className="text-2xl font-black text-white">3ターン対話ミッション達成！</h3>
-          <p className="text-sm text-slate-200">
-            {activeScenario.partnerName}と最高のコミュニケーションができたね！ (+{activeScenario.xpReward} XP)
-          </p>
-          <button
-            onClick={() => setActiveScenario(null)}
-            className="px-6 py-3.5 rounded-2xl bg-gradient-to-r from-amber-400 to-orange-500 text-slate-950 font-black text-sm shadow-lg"
-          >
-            シナリオ一覧へ戻る
-          </button>
-        </div>
-      )}
-    </div>
-  );
-}
-
-// ==================== 5. SETTINGS & JSON BACKUP MODAL ====================
-function SettingsModal({ state, onClose, onUpdateState }) {
+// ==================== 5. SETTINGS & API CONFIG VIEW ====================
+function SettingsView({ state, onUpdateState }) {
   const [nameInput, setNameInput] = useState(state.playerName || 'Leo');
+  const [apiKeyInput, setApiKeyInput] = useState(state.geminiApiKey || '');
+  const [modelInput, setModelInput] = useState(state.geminiModel || 'gemini-3.8-flash');
+  const [showKey, setShowKey] = useState(false);
   const [importText, setImportText] = useState('');
   const [statusMsg, setStatusMsg] = useState('');
   const fileInputRef = useRef(null);
 
-  function handleSaveSettings() {
+  function handleSaveConfig(e) {
+    if (e) e.preventDefault();
+    const cleanedModel = modelInput.trim() || 'gemini-3.8-flash';
     onUpdateState({
       ...state,
-      playerName: nameInput.trim() || 'Leo'
+      playerName: nameInput.trim() || 'Leo',
+      geminiApiKey: apiKeyInput.trim(),
+      geminiModel: cleanedModel
     });
-    setStatusMsg('✅ プレイヤー設定を保存しました！');
+    setModelInput(cleanedModel);
+    window.VAMOS_SPEECH.playSfx('correct', state.soundEnabled);
+    setStatusMsg('✅ プロフィール・Gemini APIキー・モデル設定（' + cleanedModel + '）を保存しました！');
   }
 
-  // Export JSON Backup as downloadable file
   function handleExportJsonFile() {
     try {
       const jsonStr = JSON.stringify(state, null, 2);
@@ -2030,7 +2277,7 @@ function SettingsModal({ state, onClose, onUpdateState }) {
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = \`vamos_quest_backup_\${window.VAMOS_STORAGE.getTodayStr()}.json\`;
+      a.download = 'vamos_quest_backup_' + window.VAMOS_STORAGE.getTodayStr() + '.json';
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
@@ -2041,23 +2288,21 @@ function SettingsModal({ state, onClose, onUpdateState }) {
     }
   }
 
-  // Copy JSON to clipboard
   function handleCopyJson() {
     try {
       const jsonStr = JSON.stringify(state, null, 2);
       navigator.clipboard.writeText(jsonStr);
-      setStatusMsg('✅ JSONバックアップをクリップボードにコピーしました！');
+      setStatusMsg('✅ JSONバックアップデータをクリップボードにコピーしました！');
     } catch (e) {
-      setStatusMsg('⚠️ コピーできませんでした。ファイルダウンロードを使ってね。');
+      setStatusMsg('⚠️ コピーできませんでした。JSONファイル保存をご利用ください。');
     }
   }
 
-  // Import JSON from file upload
   function handleFileImport(e) {
     const file = e.target.files && e.target.files[0];
     if (!file) return;
     const reader = new FileReader();
-    reader.onload = (ev) => {
+    reader.onload = ev => {
       applyImportedJson(ev.target.result);
     };
     reader.readAsText(file);
@@ -2072,6 +2317,8 @@ function SettingsModal({ state, onClose, onUpdateState }) {
       }
       onUpdateState(parsed);
       setNameInput(parsed.playerName || 'Leo');
+      setApiKeyInput(parsed.geminiApiKey || '');
+      setModelInput(parsed.geminiModel || 'gemini-3.8-flash');
       setImportText('');
       setStatusMsg('🎉 学習データのインポート（復元）が完了しました！');
     } catch (err) {
@@ -2080,163 +2327,230 @@ function SettingsModal({ state, onClose, onUpdateState }) {
   }
 
   function handleResetAll() {
-    if (window.confirm('本当に学習データを初期状態にリセットしますか？（バックアップを取っておくのがおすすめです）')) {
+    if (window.confirm('本当に学習データを初期状態にリセットしますか？（必要に応じて先にJSONエクスポートでバックアップしてください）')) {
       const fresh = window.VAMOS_STORAGE.createInitialState();
       onUpdateState(fresh);
       setNameInput(fresh.playerName);
+      setApiKeyInput(fresh.geminiApiKey);
+      setModelInput(fresh.geminiModel);
       setStatusMsg('🔄 初期データにリセットしました。');
     }
   }
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/75 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto">
-      <div className="w-full max-w-lg rounded-3xl bg-slate-900 border border-white/15 p-6 space-y-5 shadow-2xl animate-pop my-8">
+    <div className="max-w-2xl mx-auto space-y-6 pb-8 animate-pop">
+      <div>
+        <span className="text-xs font-extrabold uppercase tracking-wider text-amber-400">SETTINGS & GEMINI API CONFIG</span>
+        <h1 className="text-2xl font-black text-white mt-0.5">設定 ＆ AI・データ管理 ⚙️</h1>
+        <p className="text-xs sm:text-sm text-slate-300 mt-1">
+          Gemini APIキー・使用モデル名（デフォルト: gemini-3.8-flash）の設定や、学習データのJSONバックアップが行えます。
+        </p>
+      </div>
+
+      {statusMsg && (
+        <div className="rounded-2xl bg-emerald-500/20 border border-emerald-400/50 p-4 text-xs sm:text-sm font-black text-emerald-200 animate-pop">
+          {statusMsg}
+        </div>
+      )}
+
+      {/* Gemini API Key & Model ID Form */}
+      <form onSubmit={handleSaveConfig} className="rounded-3xl bg-slate-900/95 border border-white/10 p-5 sm:p-6 space-y-5 shadow-xl">
         <div className="flex items-center justify-between border-b border-white/10 pb-3">
-          <div className="flex items-center gap-2.5">
-            <Icon name="Settings" className="w-5 h-5 text-amber-400" />
-            <h2 className="text-lg font-black text-white">設定 ＆ 学習データバックアップ</h2>
+          <div>
+            <h2 className="text-base sm:text-lg font-black text-white">🤖 Gemini API 連携設定</h2>
+            <p className="text-xs text-slate-400">
+              AIロールプレイ会話および「現地で知りたい言葉」AI辞書で使用します（ブラウザの localStorage にのみ保存されます）。
+            </p>
           </div>
-          <button
-            onClick={onClose}
-            className="px-3 py-1 rounded-xl bg-slate-800 text-slate-300 hover:text-white text-xs font-bold"
-          >
-            閉じる ✕
-          </button>
+          <span className={
+            'text-xs font-black px-3 py-1 rounded-full border ' +
+            (state.geminiApiKey ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40' : 'bg-amber-500/20 text-amber-300 border-amber-500/40')
+          }>
+            {state.geminiApiKey ? '✓ APIキー設定済' : 'APIキー未設定'}
+          </span>
         </div>
 
-        {/* Player Name & Audio Toggles */}
-        <div className="space-y-3">
-          <div>
-            <label className="text-xs font-bold text-slate-300 block mb-1">プレイヤー名（ニックネーム）</label>
-            <div className="flex gap-2">
-              <input
-                type="text"
-                value={nameInput}
-                onChange={e => setNameInput(e.target.value)}
-                className="flex-1 px-3.5 py-2 rounded-xl bg-slate-950 border border-white/15 text-sm text-white"
-              />
+        {/* Gemini API Key Input */}
+        <div className="space-y-1.5">
+          <label className="text-xs font-black text-slate-200 block">
+            Gemini APIキー (Google AI Studio API Key)
+          </label>
+          <div className="flex gap-2">
+            <input
+              type={showKey ? 'text' : 'password'}
+              value={apiKeyInput}
+              onChange={e => setApiKeyInput(e.target.value)}
+              placeholder="AIzaSy..."
+              className="flex-1 px-4 py-2.5 rounded-xl bg-slate-950 border border-white/15 text-sm text-white font-mono focus:outline-none focus:border-amber-400"
+            />
+            <button
+              type="button"
+              onClick={() => setShowKey(!showKey)}
+              className="px-3.5 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-xs font-bold text-slate-300 border border-white/10"
+            >
+              {showKey ? '隠す' : '表示'}
+            </button>
+          </div>
+        </div>
+
+        {/* Model ID Selector + Free Text Input */}
+        <div className="space-y-2">
+          <label className="text-xs font-black text-slate-200 block">
+            使用モデル名 (Model ID) — 自由入力またはプリセット選択
+          </label>
+          <div className="flex flex-wrap gap-2 mb-1.5">
+            {window.VAMOS_GEMINI.MODEL_PRESETS.map(preset => (
               <button
-                onClick={handleSaveSettings}
-                className="px-4 py-2 rounded-xl bg-amber-400 text-slate-950 font-black text-xs"
+                key={preset.id}
+                type="button"
+                onClick={() => setModelInput(preset.id)}
+                className={
+                  'px-3 py-1.5 rounded-xl text-xs font-black border transition ' +
+                  (modelInput === preset.id
+                    ? 'bg-amber-400 text-slate-950 border-amber-400'
+                    : 'bg-slate-950 text-slate-300 border-white/10 hover:border-white/30')
+                }
               >
-                変更保存
+                {preset.label}
               </button>
-            </div>
+            ))}
+          </div>
+          <input
+            type="text"
+            value={modelInput}
+            onChange={e => setModelInput(e.target.value)}
+            placeholder="gemini-3.8-flash"
+            className="w-full px-4 py-2.5 rounded-xl bg-slate-950 border border-white/15 text-sm text-amber-300 font-mono focus:outline-none focus:border-amber-400"
+          />
+          <p className="text-[11px] text-slate-400">
+            ※ デフォルトは <code className="text-amber-300">gemini-3.8-flash</code> です。環境やアップデートに応じて任意のモデルID（<code className="text-slate-300">gemini-3.8-pro</code> 等）を直接入力して保存できます。
+          </p>
+        </div>
+
+        {/* Player Name & Audio Preferences */}
+        <div className="pt-3 border-t border-white/10 space-y-3">
+          <div>
+            <label className="text-xs font-black text-slate-200 block mb-1">プレイヤー名（ニックネーム）</label>
+            <input
+              type="text"
+              value={nameInput}
+              onChange={e => setNameInput(e.target.value)}
+              className="w-full px-4 py-2.5 rounded-xl bg-slate-950 border border-white/15 text-sm text-white"
+            />
           </div>
 
-          <div className="grid grid-cols-2 gap-3 pt-1">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
             <button
+              type="button"
               onClick={() => onUpdateState({ ...state, soundEnabled: !state.soundEnabled })}
-              className={\`p-3 rounded-2xl border text-left transition \${
-                state.soundEnabled
+              className={
+                'p-3.5 rounded-2xl border text-left transition ' +
+                (state.soundEnabled
                   ? 'bg-emerald-500/15 border-emerald-500/40 text-emerald-300'
-                  : 'bg-slate-950 border-white/10 text-slate-400'
-              }\`}
+                  : 'bg-slate-950 border-white/10 text-slate-400')
+              }
             >
               <div className="text-xs font-black">🎵 ゲーム効果音 (SFX)</div>
               <div className="text-[11px] mt-0.5">{state.soundEnabled ? 'ON (有効)' : 'OFF (ミュート)'}</div>
             </button>
 
             <button
+              type="button"
               onClick={() => onUpdateState({ ...state, autoSpeak: !state.autoSpeak })}
-              className={\`p-3 rounded-2xl border text-left transition \${
-                state.autoSpeak
+              className={
+                'p-3.5 rounded-2xl border text-left transition ' +
+                (state.autoSpeak
                   ? 'bg-emerald-500/15 border-emerald-500/40 text-emerald-300'
-                  : 'bg-slate-950 border-white/10 text-slate-400'
-              }\`}
+                  : 'bg-slate-950 border-white/10 text-slate-400')
+              }
             >
-              <div className="text-xs font-black">🗣️ 問題表示時の自動発音</div>
-              <div className="text-[11px] mt-0.5">{state.autoSpeak ? 'ON (自動再生)' : 'OFF (手動のみ)'}</div>
+              <div className="text-xs font-black">🗣️ スペイン語音声の自動再生</div>
+              <div className="text-[11px] mt-0.5">{state.autoSpeak ? 'ON (自動読み上げ)' : 'OFF (手動のみ)'}</div>
             </button>
           </div>
         </div>
 
-        {/* JSON Export / Import Backup Section */}
-        <div className="rounded-2xl bg-slate-950/90 border border-white/10 p-4 space-y-3">
-          <div className="text-xs font-black text-amber-300 uppercase">
-            💾 学習データのJSONエクスポート / インポート
-          </div>
-          <p className="text-xs text-slate-400">
-            XP・連続学習ストリーク・各カードのSRS習熟度をJSONファイルとして保存・復元できます。
-          </p>
+        <button
+          type="submit"
+          className="w-full py-3.5 rounded-2xl bg-gradient-to-r from-amber-400 to-orange-500 text-slate-950 font-black text-sm shadow-lg shadow-amber-500/20 active:scale-95 transition"
+        >
+          設定を保存する 💾
+        </button>
+      </form>
 
-          <div className="grid grid-cols-2 gap-2.5">
+      {/* JSON Backup Export / Import */}
+      <div className="rounded-3xl bg-slate-900/95 border border-white/10 p-5 sm:p-6 space-y-4">
+        <div className="text-sm font-black text-amber-300 uppercase">
+          📦 学習進捗・追加フレーズのJSONバックアップ
+        </div>
+        <p className="text-xs text-slate-300">
+          XP・ストリーク・SRS習熟度・AIで追加したカスタムフレーズをすべてJSONファイルとしてエクスポート／インポートできます。
+        </p>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <button
+            onClick={handleExportJsonFile}
+            className="py-3 px-4 rounded-2xl bg-sky-500/20 hover:bg-sky-500/30 border border-sky-500/40 text-sky-300 font-black text-xs flex items-center justify-center gap-2"
+          >
+            <Icon name="Download" className="w-4 h-4" />
+            <span>JSONファイルをダウンロード</span>
+          </button>
+          <button
+            onClick={handleCopyJson}
+            className="py-3 px-4 rounded-2xl bg-slate-800 hover:bg-slate-700 border border-white/15 text-slate-200 font-bold text-xs"
+          >
+            📋 JSONデータをクリップボードにコピー
+          </button>
+        </div>
+
+        <div className="pt-3 border-t border-white/10 space-y-3">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <span className="text-xs font-bold text-slate-300">JSONファイルから復元（インポート）</span>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept=".json,application/json"
+              onChange={handleFileImport}
+              className="hidden"
+            />
             <button
-              onClick={handleExportJsonFile}
-              className="py-2.5 px-3 rounded-xl bg-sky-500/20 hover:bg-sky-500/30 border border-sky-500/40 text-sky-300 font-black text-xs flex items-center justify-center gap-1.5"
+              onClick={() => fileInputRef.current && fileInputRef.current.click()}
+              className="py-2 px-4 rounded-xl bg-amber-400/20 hover:bg-amber-400/30 border border-amber-400/40 text-amber-300 font-black text-xs flex items-center gap-1.5"
             >
-              <Icon name="Download" className="w-4 h-4" />
-              <span>JSONファイルを保存</span>
-            </button>
-            <button
-              onClick={handleCopyJson}
-              className="py-2.5 px-3 rounded-xl bg-slate-800 hover:bg-slate-700 border border-white/15 text-slate-200 font-bold text-xs"
-            >
-              📋 JSONをコピー
+              <Icon name="Upload" className="w-4 h-4" />
+              <span>JSONファイルを選択</span>
             </button>
           </div>
 
-          <div className="pt-2 border-t border-white/10 space-y-2">
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-bold text-slate-300">JSONファイルから復元</span>
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept=".json,application/json"
-                onChange={handleFileImport}
-                className="hidden"
+          <details className="text-xs text-slate-400">
+            <summary className="cursor-pointer hover:text-slate-200 font-bold py-1">
+              またはJSONテキストを直接貼り付けて復元する
+            </summary>
+            <div className="mt-2 space-y-2">
+              <textarea
+                rows="3"
+                value={importText}
+                onChange={e => setImportText(e.target.value)}
+                placeholder='{"version":2,"playerName":"Leo",...}'
+                className="w-full p-3 rounded-xl bg-slate-950 border border-white/15 text-xs text-white font-mono"
               />
               <button
-                onClick={() => fileInputRef.current && fileInputRef.current.click()}
-                className="py-1.5 px-3 rounded-xl bg-amber-400/20 hover:bg-amber-400/30 border border-amber-400/40 text-amber-300 font-black text-xs flex items-center gap-1.5"
+                onClick={() => applyImportedJson(importText)}
+                disabled={!importText.trim()}
+                className="w-full py-2.5 rounded-xl bg-emerald-500 text-slate-950 font-black text-xs disabled:opacity-40"
               >
-                <Icon name="Upload" className="w-3.5 h-3.5" />
-                <span>ファイルを選択してインポート</span>
+                貼り付けたJSONデータを復元する
               </button>
             </div>
-
-            <details className="text-xs text-slate-400">
-              <summary className="cursor-pointer hover:text-slate-200 font-bold py-1">
-                またはJSONテキストを直接貼り付けてインポート
-              </summary>
-              <div className="mt-2 space-y-2">
-                <textarea
-                  rows="3"
-                  value={importText}
-                  onChange={e => setImportText(e.target.value)}
-                  placeholder='{"version":1,"playerName":"Leo",...}'
-                  className="w-full p-2.5 rounded-xl bg-slate-900 border border-white/15 text-xs text-white font-mono"
-                />
-                <button
-                  onClick={() => applyImportedJson(importText)}
-                  disabled={!importText.trim()}
-                  className="w-full py-2 rounded-xl bg-emerald-500 text-slate-950 font-black text-xs disabled:opacity-40"
-                >
-                  貼り付けたJSONを復元する
-                </button>
-              </div>
-            </details>
-          </div>
+          </details>
         </div>
 
-        {statusMsg && (
-          <div className="rounded-xl bg-amber-400/15 border border-amber-400/40 p-3 text-xs font-bold text-amber-300">
-            {statusMsg}
-          </div>
-        )}
-
-        <div className="flex items-center justify-between pt-2 border-t border-white/10">
+        <div className="pt-3 border-t border-white/10 flex justify-end">
           <button
             onClick={handleResetAll}
             className="text-xs font-bold text-rose-400 hover:underline"
           >
-            学習データを初期状態にリセット
-          </button>
-          <button
-            onClick={onClose}
-            className="px-5 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-white font-black text-xs"
-          >
-            完了
+            ⚠️ 学習データを初期状態にリセットする
           </button>
         </div>
       </div>
@@ -2247,10 +2561,10 @@ function SettingsModal({ state, onClose, onUpdateState }) {
 // ==================== ROOT APPLICATION ====================
 function App() {
   const [state, setState] = useState(() => window.VAMOS_STORAGE.loadState());
-  const [activeTab, setActiveTab] = useState('dashboard'); // 'dashboard' | 'quest' | 'collection' | 'roleplay'
+  // 5 Bottom Navigation Tabs: 'dashboard' | 'quest' | 'ai_chat' | 'vocab' | 'settings'
+  const [activeTab, setActiveTab] = useState('dashboard');
   const [questInitial, setQuestInitial] = useState(null);
   const [reviewInitialMode, setReviewInitialMode] = useState(null);
-  const [showSettings, setShowSettings] = useState(false);
 
   const stats = useMemo(() => window.VAMOS_STORAGE.computeStats(state), [state]);
 
@@ -2266,15 +2580,14 @@ function App() {
 
   function handleStartReview(mode = 'due') {
     setReviewInitialMode(mode);
-    setActiveTab('collection');
+    setActiveTab('vocab');
   }
 
   return (
     <div className="min-h-screen stadium-grid flex flex-col">
-      {/* Sticky Top Header */}
+      {/* Top Header */}
       <header className="sticky top-0 z-30 backdrop-blur-md bg-slate-950/85 border-b border-white/10">
         <div className="max-w-5xl mx-auto px-4 h-16 flex items-center justify-between gap-3">
-          {/* Brand Logo */}
           <div
             onClick={() => setActiveTab('dashboard')}
             className="cursor-pointer flex items-center gap-2.5"
@@ -2283,35 +2596,37 @@ function App() {
               ⚽
             </div>
             <div>
-              <div className="flex items-center gap-1.5">
-                <span className="text-lg font-black tracking-tight text-white font-sport">
-                  VAMOS! <span className="text-amber-400">QUEST</span>
-                </span>
-              </div>
+              <span className="text-lg font-black tracking-tight text-white font-sport">
+                VAMOS! <span className="text-amber-400">QUEST</span>
+              </span>
               <div className="text-[10px] font-bold text-slate-400 -mt-1 hidden sm:block">
                 13歳からのスペイン語冒険クエスト
               </div>
             </div>
           </div>
 
-          {/* Quick Status Pills & Settings */}
           <div className="flex items-center gap-2 sm:gap-3">
             <div className="px-2.5 py-1 rounded-xl bg-slate-900 border border-white/10 flex items-center gap-1.5 text-xs font-black text-rose-400 font-sport">
               <span>🔥</span>
-              <span>{state.streak}日</span>
+              <span>{state.streak + '日'}</span>
             </div>
             <div className="px-2.5 py-1 rounded-xl bg-slate-900 border border-white/10 flex items-center gap-1.5 text-xs font-black text-amber-300 font-sport">
               <Icon name="Zap" className="w-3.5 h-3.5 text-amber-400" />
-              <span>{stats.xp} XP</span>
+              <span>{stats.xp + ' XP'}</span>
             </div>
             <div className="hidden sm:flex px-2.5 py-1 rounded-xl bg-amber-400/15 border border-amber-400/30 items-center gap-1 text-xs font-black text-amber-300">
               <span>{stats.currentRank.badge}</span>
-              <span>Lv.{stats.level}</span>
+              <span>{'Lv.' + stats.level}</span>
             </div>
             <button
-              onClick={() => setShowSettings(true)}
-              className="p-2 rounded-xl bg-slate-900 hover:bg-slate-800 border border-white/10 text-slate-300 hover:text-white transition"
-              title="設定・バックアップ"
+              onClick={() => setActiveTab('settings')}
+              className={
+                'p-2 rounded-xl border transition ' +
+                (activeTab === 'settings'
+                  ? 'bg-amber-400 text-slate-950 border-amber-400'
+                  : 'bg-slate-900 hover:bg-slate-800 border-white/10 text-slate-300')
+              }
+              title="設定＆API管理"
             >
               <Icon name="Settings" className="w-5 h-5" />
             </button>
@@ -2319,7 +2634,7 @@ function App() {
         </div>
       </header>
 
-      {/* Main Content Container */}
+      {/* Main Content */}
       <main className="flex-1 max-w-5xl w-full mx-auto px-4 pt-5 pb-24">
         {activeTab === 'dashboard' && (
           <DashboardView
@@ -2328,7 +2643,6 @@ function App() {
             onSelectCategoryStage={handleSelectCategoryStage}
             onStartReview={handleStartReview}
             onNavigate={setActiveTab}
-            onOpenSettings={() => setShowSettings(true)}
           />
         )}
 
@@ -2337,36 +2651,46 @@ function App() {
             state={state}
             initialSelection={questInitial}
             onUpdateState={updateAndSaveState}
-            onGoToCollection={() => setActiveTab('collection')}
+            onGoToCollection={() => setActiveTab('vocab')}
           />
         )}
 
-        {activeTab === 'collection' && (
-          <CollectionAndSrsView
+        {activeTab === 'ai_chat' && (
+          <AiRoleplayChatView
+            state={state}
+            onUpdateState={updateAndSaveState}
+            onOpenApiSettings={() => setActiveTab('settings')}
+          />
+        )}
+
+        {activeTab === 'vocab' && (
+          <VocabAndAiDictView
             state={state}
             stats={stats}
             initialMode={reviewInitialMode}
             onClearInitialMode={() => setReviewInitialMode(null)}
             onUpdateState={updateAndSaveState}
+            onOpenApiSettings={() => setActiveTab('settings')}
           />
         )}
 
-        {activeTab === 'roleplay' && (
-          <RoleplayModeView
+        {activeTab === 'settings' && (
+          <SettingsView
             state={state}
             onUpdateState={updateAndSaveState}
           />
         )}
       </main>
 
-      {/* Mobile-First Bottom Navigation Bar */}
+      {/* Mobile-First 5-Tab Bottom Navigation Bar */}
       <nav className="fixed bottom-0 inset-x-0 z-40 backdrop-blur-xl bg-slate-950/90 border-t border-white/10">
-        <div className="max-w-lg mx-auto px-3 h-16 grid grid-cols-4 gap-1">
+        <div className="max-w-xl mx-auto px-2 h-16 grid grid-cols-5 gap-1">
           {[
             { id: 'dashboard', label: 'ホーム', icon: 'Home' },
             { id: 'quest', label: 'クエスト', icon: 'Swords' },
-            { id: 'collection', label: 'トレカ復習', icon: 'BookOpen', badge: stats.duePhrases.length },
-            { id: 'roleplay', label: 'AI対話', icon: 'MessageSquare' }
+            { id: 'ai_chat', label: 'AI会話', icon: 'MessageSquare' },
+            { id: 'vocab', label: '単語帳＆辞書', icon: 'BookOpen', badge: stats.duePhrases.length },
+            { id: 'settings', label: '設定', icon: 'Settings' }
           ].map(tab => {
             const active = activeTab === tab.id;
             return (
@@ -2376,9 +2700,10 @@ function App() {
                   if (tab.id !== 'quest') setQuestInitial(null);
                   setActiveTab(tab.id);
                 }}
-                className={\`relative flex flex-col items-center justify-center rounded-2xl transition \${
-                  active ? 'text-amber-400' : 'text-slate-400 hover:text-slate-200'
-                }\`}
+                className={
+                  'relative flex flex-col items-center justify-center rounded-2xl transition ' +
+                  (active ? 'text-amber-400' : 'text-slate-400 hover:text-slate-200')
+                }
               >
                 {active && (
                   <span className="absolute top-1 w-8 h-1 rounded-full bg-gradient-to-r from-rose-500 to-amber-400" />
@@ -2391,21 +2716,12 @@ function App() {
                     </span>
                   )}
                 </div>
-                <span className="text-[11px] font-black mt-1">{tab.label}</span>
+                <span className="text-[10px] sm:text-[11px] font-black mt-1 truncate max-w-full px-1">{tab.label}</span>
               </button>
             );
           })}
         </div>
       </nav>
-
-      {/* Settings & JSON Backup Modal */}
-      {showSettings && (
-        <SettingsModal
-          state={state}
-          onClose={() => setShowSettings(false)}
-          onUpdateState={updateAndSaveState}
-        />
-      )}
     </div>
   );
 }
@@ -2414,7 +2730,7 @@ const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(<App />);
 `;
 
-// Compile and execute JSX via @babel/standalone so it works on both file:// and http://
+// Compile and execute JSX via @babel/standalone with classic runtime
 (function bootVamosQuest() {
   try {
     const compiled = Babel.transform(APP_JSX_SOURCE, {
@@ -2430,4 +2746,3 @@ root.render(<App />);
     }
   }
 })();
-

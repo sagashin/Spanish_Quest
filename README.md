@@ -13,3 +13,4 @@
 ## 🚀 デプロイ
 静的フロントエンド構成のため、Vercel、GitHub Pages、Cloudflare Pages等にそのままデプロイ可能です。
 `index.html` がルートに配置されています。
+
