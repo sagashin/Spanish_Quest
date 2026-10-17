@@ -18,7 +18,7 @@ function cleanWordForSpeech(word) {
 function formatWordRuby(rubyText, showMeaning = false) {
   if (!rubyText) return '';
   if (showMeaning) return String(rubyText);
-  return String(rubyText).replace(/[\(（].*?[\)）]/g, '').trim();
+  return String(rubyText).replace(/[(（].*?[)）]/g, '').trim();
 }
 
 // Lucide-style SVG Icons
@@ -1270,7 +1270,7 @@ function AiRoleplayChatView({ state, onUpdateState, onOpenApiSettings }) {
 
     setErrorBanner('');
     setInputText('');
-    if (!/[\u3040-\u30ff\u4e00-\u9faf]/.test(text)) {
+    if (!/[\\u3040-\\u30ff\\u4e00-\\u9faf]/.test(text)) {
       window.VAMOS_SPEECH.speakSpanish(text);
     }
 
