@@ -366,7 +366,8 @@
     const masteryRatio = maxMasteryPoints > 0 ? totalMasteryPoints / maxMasteryPoints : 0;
     const readinessPct = Math.min(100, Math.round((learnedRatio * 0.7 + masteryRatio * 0.3) * 100));
 
-    let currentRank = ranks[0];
+    const defaultRank = { minPct: 0, title: 'ルーキー旅行者', enTitle: 'Rookie Traveler', badge: '🎒', desc: 'スペインへの第一歩を踏み出したばかり！まずは挨拶から始めよう。' };
+    let currentRank = ranks[0] || defaultRank;
     let nextRank = null;
     for (let i = 0; i < ranks.length; i++) {
       if (readinessPct >= ranks[i].minPct) {
