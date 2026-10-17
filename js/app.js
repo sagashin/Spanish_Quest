@@ -15,6 +15,12 @@ function cleanWordForSpeech(word) {
   return String(word || '').replace(/[¡!¿?.,]/g, '').trim();
 }
 
+function formatWordRuby(rubyText, showMeaning = false) {
+  if (!rubyText) return '';
+  if (showMeaning) return String(rubyText);
+  return String(rubyText).replace(/[\(（].*?[\)）]/g, '').trim();
+}
+
 // Lucide-style SVG Icons
 function Icon({ name, className = "w-5 h-5" }) {
   const icons = {
@@ -536,17 +542,21 @@ function QuestModeView({ state, initialSelection, onUpdateState, onGoToCollectio
       ? catPhrases
       : catPhrases.filter(p => p.stage === stageNum);
 
-    const otherCatPhrases = catPhrases.filter(p => p.stage !== stageNum);
-    const basePool = [...shuffleArray(stagePool), ...shuffleArray(otherCatPhrases)];
+    const poolToUse = stagePool.length > 0 ? stagePool : catPhrases;
+    const shuffled = shuffleArray(poolToUse);
     const fivePhrases = [];
     for (let i = 0; i < 5; i++) {
-      fivePhrases.push(basePool[i % basePool.length]);
+      fivePhrases.push(shuffled[i % shuffled.length]);
     }
 
     const types = ['chunk', 'listening', 'chunk', 'listening', 'speaking'];
 
     const questions = fivePhrases.map((phrase, idx) => {
-      const qType = types[idx];
+      let qType = types[idx];
+      if (qType === 'chunk' && (!phrase.chunks || phrase.chunks.length <= 1)) {
+        qType = 'listening';
+      }
+
       if (qType === 'chunk') {
         const allBlocks = shuffleArray([
           ...phrase.chunks.map((text, i) => ({ id: 'c_' + i + '_' + text, text, isTarget: true })),
@@ -567,8 +577,7 @@ function QuestModeView({ state, initialSelection, onUpdateState, onGoToCollectio
     if (!state.cards[firstId]?.seen) {
       newlyUnlocked.push(firstId);
     }
-    const nextState = window.VAMOS_STORAGE.markPhraseSeen(state, firstId);
-    onUpdateState(nextState);
+    onUpdateState(prev => window.VAMOS_STORAGE.markPhraseSeen(prev, firstId));
 
     setActiveQuest({
       categoryId,
@@ -580,7 +589,7 @@ function QuestModeView({ state, initialSelection, onUpdateState, onGoToCollectio
       newlyUnlockedIds: newlyUnlocked,
       finished: false
     });
-    initQuestionInteraction(questions[0], nextState.autoSpeak);
+    initQuestionInteraction(questions[0], state.autoSpeak);
   }
 
   function initQuestionInteraction(q, shouldSpeak) {
@@ -698,12 +707,10 @@ function QuestModeView({ state, initialSelection, onUpdateState, onGoToCollectio
     window.VAMOS_SPEECH.speakSpanish(currentQ.phrase.spanish);
 
     const xpDelta = isCorrect ? 25 : 10;
-    const updatedState = window.VAMOS_STORAGE.recordQuestAnswer(
-      { ...state, xp: (state.xp || 0) + xpDelta },
-      currentQ.phrase.id,
-      isCorrect
-    );
-    onUpdateState(updatedState);
+    onUpdateState(prev => {
+      const withXp = { ...prev, xp: (prev.xp || 0) + xpDelta };
+      return window.VAMOS_STORAGE.recordQuestAnswer(withXp, currentQ.phrase.id, isCorrect);
+    });
 
     setQuestionState(prev => ({ ...prev, isSubmitted: true, isCorrect }));
     setActiveQuest(prev => ({
@@ -719,16 +726,15 @@ function QuestModeView({ state, initialSelection, onUpdateState, onGoToCollectio
       window.VAMOS_SPEECH.playSfx('fanfare', state.soundEnabled);
       const stageKey = activeQuest.categoryId + '_' + activeQuest.stage;
       const stageBonusXp = 40;
-      const nextState = {
-        ...state,
-        xp: (state.xp || 0) + stageBonusXp,
-        totalQuestsCleared: (state.totalQuestsCleared || 0) + 1,
+      onUpdateState(prev => ({
+        ...prev,
+        xp: (prev.xp || 0) + stageBonusXp,
+        totalQuestsCleared: (prev.totalQuestsCleared || 0) + 1,
         completedStages: {
-          ...state.completedStages,
+          ...prev.completedStages,
           [stageKey]: true
         }
-      };
-      onUpdateState(nextState);
+      }));
       setActiveQuest(prev => ({
         ...prev,
         earnedXp: prev.earnedXp + stageBonusXp,
@@ -737,8 +743,7 @@ function QuestModeView({ state, initialSelection, onUpdateState, onGoToCollectio
     } else {
       const nextQ = activeQuest.questions[nextIdx];
       const wasSeen = state.cards[nextQ.phrase.id]?.seen;
-      const nextState = window.VAMOS_STORAGE.markPhraseSeen(state, nextQ.phrase.id);
-      onUpdateState(nextState);
+      onUpdateState(prev => window.VAMOS_STORAGE.markPhraseSeen(prev, nextQ.phrase.id));
 
       setActiveQuest(prev => ({
         ...prev,
@@ -1001,7 +1006,7 @@ function QuestModeView({ state, initialSelection, onUpdateState, onGoToCollectio
                     className="chunk-btn px-4 py-2 rounded-xl bg-gradient-to-b from-amber-400 to-amber-500 text-slate-950 font-black text-sm flex flex-col items-center"
                   >
                     <span className="text-[10px] font-bold text-slate-800 leading-none mb-0.5">
-                      {phrase.wordRubies?.[block.text] || ''}
+                      {formatWordRuby(phrase.wordRubies?.[block.text], questionState.isSubmitted)}
                     </span>
                     <span className="font-sport">{block.text}</span>
                   </button>
@@ -1025,7 +1030,7 @@ function QuestModeView({ state, initialSelection, onUpdateState, onGoToCollectio
                     }
                   >
                     <span className="text-[10px] font-bold text-amber-300/90 leading-none mb-0.5">
-                      {phrase.wordRubies?.[block.text] || ''}
+                      {formatWordRuby(phrase.wordRubies?.[block.text], questionState.isSubmitted)}
                     </span>
                     <span className="font-sport">{block.text}</span>
                   </button>
@@ -1234,14 +1239,18 @@ function AiRoleplayChatView({ state, onUpdateState, onOpenApiSettings }) {
     const categoryByPersona =
       selectedPersonaId === 'mateo' ? 'soccer' : selectedPersonaId === 'carlos' ? 'food' : 'greetings';
 
-    const { state: nextState, isDuplicate } = window.VAMOS_STORAGE.addCustomPhrase(state, {
-      spanish: item.spanish,
-      pronunciation: item.pronunciation || '',
-      japanese: item.japanese || 'AI会話で保存したフレーズ',
-      category: categoryByPersona,
-      tip: currentPersona.name + 'とのAIロールプレイ会話から登録したフレーズ！'
+    let isDuplicate = false;
+    onUpdateState(prev => {
+      const res = window.VAMOS_STORAGE.addCustomPhrase(prev, {
+        spanish: item.spanish,
+        pronunciation: item.pronunciation || '',
+        japanese: item.japanese || 'AI会話で保存したフレーズ',
+        category: categoryByPersona,
+        tip: currentPersona.name + 'とのAIロールプレイ会話から登録したフレーズ！'
+      });
+      isDuplicate = res.isDuplicate;
+      return res.state;
     });
-    onUpdateState(nextState);
     window.VAMOS_SPEECH.playSfx('correct', state.soundEnabled);
     showToast(
       isDuplicate
@@ -1261,7 +1270,9 @@ function AiRoleplayChatView({ state, onUpdateState, onOpenApiSettings }) {
 
     setErrorBanner('');
     setInputText('');
-    window.VAMOS_SPEECH.speakSpanish(text);
+    if (!/[\u3040-\u30ff\u4e00-\u9faf]/.test(text)) {
+      window.VAMOS_SPEECH.speakSpanish(text);
+    }
 
     const userMsgObj = {
       id: 'u_' + Date.now(),
@@ -1309,11 +1320,10 @@ function AiRoleplayChatView({ state, onUpdateState, onOpenApiSettings }) {
       }));
 
       // Reward XP for each roleplay turn
-      const nextState = window.VAMOS_STORAGE.touchStudyStreak({
-        ...state,
-        xp: (state.xp || 0) + 15
-      });
-      onUpdateState(nextState);
+      onUpdateState(prev => window.VAMOS_STORAGE.touchStudyStreak({
+        ...prev,
+        xp: (prev.xp || 0) + 15
+      }));
 
       if (state.autoSpeak) {
         setTimeout(() => window.VAMOS_SPEECH.speakSpanish(aiRes.ai_spanish), 200);
@@ -1692,13 +1702,19 @@ function VocabAndAiDictView({ state, stats, initialMode, onClearInitialMode, onU
 
   function handleSaveGeneratedPhrase() {
     if (!generatedPreview) return;
-    const { state: nextState, addedPhrase, isDuplicate } = window.VAMOS_STORAGE.addCustomPhrase(state, generatedPreview);
-    onUpdateState(nextState);
+    let addedName = generatedPreview.spanish;
+    let wasDuplicate = false;
+    onUpdateState(prev => {
+      const res = window.VAMOS_STORAGE.addCustomPhrase(prev, generatedPreview);
+      addedName = (res.addedPhrase && res.addedPhrase.spanish) || generatedPreview.spanish;
+      wasDuplicate = res.isDuplicate;
+      return res.state;
+    });
     window.VAMOS_SPEECH.playSfx('fanfare', state.soundEnabled);
     setAddedToast(
-      isDuplicate
-        ? '✅「' + addedPhrase.spanish + '」は既に登録済みです（本日の復習対象にセットしました）！'
-        : '🎉「' + addedPhrase.spanish + '」を復習コレクション＆パズルに追加しました！ (+20 XP)'
+      wasDuplicate
+        ? '✅「' + addedName + '」は既に登録済みです（本日の復習対象にセットしました）！'
+        : '🎉「' + addedName + '」を復習コレクション＆パズルに追加しました！ (+20 XP)'
     );
     setGeneratedPreview(null);
     setJpRequest('');
@@ -1748,8 +1764,7 @@ function VocabAndAiDictView({ state, stats, initialMode, onClearInitialMode, onU
   // SRS self-evaluation: 'again' (もう一回) | 'good' (普通) | 'easy' (余裕)
   function handleRateSrsCard(quality) {
     const currentItem = srsSession.queue[srsSession.currentIndex];
-    const updatedState = window.VAMOS_STORAGE.recordSrsReview(state, currentItem.phrase.id, quality);
-    onUpdateState(updatedState);
+    onUpdateState(prev => window.VAMOS_STORAGE.recordSrsReview(prev, currentItem.phrase.id, quality));
 
     const xpGain = quality === 'easy' ? 25 : quality === 'good' ? 20 : 10;
     const nextIdx = srsSession.currentIndex + 1;
@@ -1780,16 +1795,18 @@ function VocabAndAiDictView({ state, stats, initialMode, onClearInitialMode, onU
 
   function handleUnlockAllCards() {
     const today = window.VAMOS_STORAGE.getTodayStr();
-    const nextCards = { ...state.cards };
-    allPhrases.forEach(p => {
-      nextCards[p.id] = {
-        ...(nextCards[p.id] || {}),
-        seen: true,
-        masteryLevel: Math.max(1, nextCards[p.id]?.masteryLevel || 1),
-        nextReviewDate: nextCards[p.id]?.nextReviewDate || today
-      };
+    onUpdateState(prev => {
+      const nextCards = { ...prev.cards };
+      allPhrases.forEach(p => {
+        nextCards[p.id] = {
+          ...(nextCards[p.id] || {}),
+          seen: true,
+          masteryLevel: Math.max(1, nextCards[p.id]?.masteryLevel || 1),
+          nextReviewDate: nextCards[p.id]?.nextReviewDate || today
+        };
+      });
+      return { ...prev, cards: nextCards };
     });
-    onUpdateState({ ...state, cards: nextCards });
     window.VAMOS_SPEECH.playSfx('fanfare', state.soundEnabled);
   }
 
@@ -1910,32 +1927,48 @@ function VocabAndAiDictView({ state, stats, initialMode, onClearInitialMode, onU
 
           {srsSession.isRevealed && (
             <div className="pt-3 border-t border-white/10 space-y-3 animate-pop">
-              <div className="text-xs text-center font-bold text-slate-300">
-                自己評価を選んで次回の出題日（SRS忘却曲線）を更新しよう！
-              </div>
-              <div className="grid grid-cols-3 gap-2.5">
-                <button
-                  onClick={() => handleRateSrsCard('again')}
-                  className="p-3 rounded-2xl bg-rose-500/20 hover:bg-rose-500/30 border border-rose-500/40 text-center transition active:scale-95"
-                >
-                  <div className="text-xs font-black text-rose-300">😓 もう一回</div>
-                  <div className="text-[10px] text-slate-400 mt-0.5">1日後に再出題</div>
-                </button>
-                <button
-                  onClick={() => handleRateSrsCard('good')}
-                  className="p-3 rounded-2xl bg-sky-500/20 hover:bg-sky-500/30 border border-sky-500/40 text-center transition active:scale-95"
-                >
-                  <div className="text-xs font-black text-sky-300">👍 普通</div>
-                  <div className="text-[10px] text-slate-400 mt-0.5">Lv.+1 (3〜7日後)</div>
-                </button>
-                <button
-                  onClick={() => handleRateSrsCard('easy')}
-                  className="p-3 rounded-2xl bg-emerald-500/20 hover:bg-emerald-500/30 border border-emerald-500/40 text-center transition active:scale-95"
-                >
-                  <div className="text-xs font-black text-emerald-300">⚡ 余裕！</div>
-                  <div className="text-[10px] text-slate-400 mt-0.5">Lv.+2 (7〜30日後)</div>
-                </button>
-              </div>
+              {srsSession.selectedOptionId === phrase.id ? (
+                <>
+                  <div className="text-xs text-center font-bold text-slate-300">
+                    自己評価を選んで次回の出題日（SRS忘却曲線）を更新しよう！
+                  </div>
+                  <div className="grid grid-cols-3 gap-2.5">
+                    <button
+                      onClick={() => handleRateSrsCard('again')}
+                      className="p-3 rounded-2xl bg-rose-500/20 hover:bg-rose-500/30 border border-rose-500/40 text-center transition active:scale-95"
+                    >
+                      <div className="text-xs font-black text-rose-300">😓 もう一回</div>
+                      <div className="text-[10px] text-slate-400 mt-0.5">1日後に再出題</div>
+                    </button>
+                    <button
+                      onClick={() => handleRateSrsCard('good')}
+                      className="p-3 rounded-2xl bg-sky-500/20 hover:bg-sky-500/30 border border-sky-500/40 text-center transition active:scale-95"
+                    >
+                      <div className="text-xs font-black text-sky-300">👍 普通</div>
+                      <div className="text-[10px] text-slate-400 mt-0.5">Lv.+1 (3〜7日後)</div>
+                    </button>
+                    <button
+                      onClick={() => handleRateSrsCard('easy')}
+                      className="p-3 rounded-2xl bg-emerald-500/20 hover:bg-emerald-500/30 border border-emerald-500/40 text-center transition active:scale-95"
+                    >
+                      <div className="text-xs font-black text-emerald-300">⚡ 余裕！</div>
+                      <div className="text-[10px] text-slate-400 mt-0.5">Lv.+2 (7〜30日後)</div>
+                    </button>
+                  </div>
+                </>
+              ) : (
+                <div className="space-y-3">
+                  <div className="p-3 rounded-2xl bg-rose-500/10 border border-rose-500/30 text-center text-xs font-bold text-rose-300">
+                    💡 今回は不正解のため、明日もう1回復習して定着させよう！
+                  </div>
+                  <button
+                    onClick={() => handleRateSrsCard('again')}
+                    className="w-full py-3.5 rounded-2xl bg-rose-500 hover:bg-rose-600 text-white font-black text-sm text-center shadow-lg transition active:scale-95 flex items-center justify-center gap-2"
+                  >
+                    <span>次へ進む（1日後に再出題） →</span>
+                  </button>
+                </div>
+              )}
             </div>
           )}
         </div>
@@ -2206,14 +2239,30 @@ function VocabAndAiDictView({ state, stats, initialMode, onClearInitialMode, onU
                       </span>
                     )}
                   </div>
-                  <span
-                    className={
-                      'text-xs font-black font-sport ' +
-                      (isMaster ? 'text-amber-300' : isLearning ? 'text-rose-300' : 'text-slate-500')
-                    }
-                  >
-                    {isMaster ? '👑 MASTER' : isLearning ? '🔥 LEARNING' : 'Lv.0'}
-                  </span>
+                  <div className="flex items-center gap-2">
+                    {p.isCustom && (
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          if (window.confirm('「' + p.spanish + '」を単語帳から削除しますか？')) {
+                            onUpdateState(prev => window.VAMOS_STORAGE.deleteCustomPhrase(prev, p.id));
+                          }
+                        }}
+                        className="px-2 py-0.5 rounded-lg bg-rose-500/20 hover:bg-rose-500/40 text-rose-300 border border-rose-500/30 text-[10px] font-black transition"
+                        title="このカスタムフレーズを削除"
+                      >
+                        ✕ 削除
+                      </button>
+                    )}
+                    <span
+                      className={
+                        'text-xs font-black font-sport ' +
+                        (isMaster ? 'text-amber-300' : isLearning ? 'text-rose-300' : 'text-slate-500')
+                      }
+                    >
+                      {isMaster ? '👑 MASTER' : isLearning ? '🔥 LEARNING' : 'Lv.0'}
+                    </span>
+                  </div>
                 </div>
 
                 <div className="text-xs font-bold text-amber-300/95 tracking-wide">{p.pronunciation || p.kana}</div>
@@ -2259,12 +2308,12 @@ function SettingsView({ state, onUpdateState }) {
   function handleSaveConfig(e) {
     if (e) e.preventDefault();
     const cleanedModel = modelInput.trim() || 'gemini-3.8-flash';
-    onUpdateState({
-      ...state,
+    onUpdateState(prev => ({
+      ...prev,
       playerName: nameInput.trim() || 'Leo',
       geminiApiKey: apiKeyInput.trim(),
       geminiModel: cleanedModel
-    });
+    }));
     setModelInput(cleanedModel);
     window.VAMOS_SPEECH.playSfx('correct', state.soundEnabled);
     setStatusMsg('✅ プロフィール・Gemini APIキー・モデル設定（' + cleanedModel + '）を保存しました！');
@@ -2311,14 +2360,15 @@ function SettingsView({ state, onUpdateState }) {
   function applyImportedJson(rawText) {
     try {
       const parsed = JSON.parse(rawText);
-      if (!parsed || typeof parsed !== 'object' || !parsed.cards) {
+      if (!parsed || typeof parsed !== 'object') {
         setStatusMsg('⚠️ 無効なJSONデータです。Vamos! Questのバックアップファイルを選択してください。');
         return;
       }
-      onUpdateState(parsed);
-      setNameInput(parsed.playerName || 'Leo');
-      setApiKeyInput(parsed.geminiApiKey || '');
-      setModelInput(parsed.geminiModel || 'gemini-3.8-flash');
+      const normalized = window.VAMOS_STORAGE.normalizeState(parsed);
+      onUpdateState(normalized);
+      setNameInput(normalized.playerName || 'Leo');
+      setApiKeyInput(normalized.geminiApiKey || '');
+      setModelInput(normalized.geminiModel || 'gemini-3.8-flash');
       setImportText('');
       setStatusMsg('🎉 学習データのインポート（復元）が完了しました！');
     } catch (err) {
@@ -2442,7 +2492,7 @@ function SettingsView({ state, onUpdateState }) {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
             <button
               type="button"
-              onClick={() => onUpdateState({ ...state, soundEnabled: !state.soundEnabled })}
+              onClick={() => onUpdateState(prev => ({ ...prev, soundEnabled: !prev.soundEnabled }))}
               className={
                 'p-3.5 rounded-2xl border text-left transition ' +
                 (state.soundEnabled
@@ -2456,7 +2506,7 @@ function SettingsView({ state, onUpdateState }) {
 
             <button
               type="button"
-              onClick={() => onUpdateState({ ...state, autoSpeak: !state.autoSpeak })}
+              onClick={() => onUpdateState(prev => ({ ...prev, autoSpeak: !prev.autoSpeak }))}
               className={
                 'p-3.5 rounded-2xl border text-left transition ' +
                 (state.autoSpeak
@@ -2568,9 +2618,12 @@ function App() {
 
   const stats = useMemo(() => window.VAMOS_STORAGE.computeStats(state), [state]);
 
-  function updateAndSaveState(nextState) {
-    setState(nextState);
-    window.VAMOS_STORAGE.saveState(nextState);
+  function updateAndSaveState(updater) {
+    setState(prev => {
+      const nextState = typeof updater === 'function' ? updater(prev) : updater;
+      window.VAMOS_STORAGE.saveState(nextState);
+      return nextState;
+    });
   }
 
   function handleSelectCategoryStage(categoryId, stage) {

@@ -126,14 +126,22 @@
     }
   }
 
+  const NUMBER_WORDS_ES = {
+    '0': 'cero', '1': 'uno', '2': 'dos', '3': 'tres', '4': 'cuatro',
+    '5': 'cinco', '6': 'seis', '7': 'siete', '8': 'ocho', '9': 'nueve',
+    '10': 'diez', '11': 'once', '12': 'doce', '13': 'trece', '14': 'catorce',
+    '15': 'quince', '16': 'dieciseis', '17': 'diecisiete', '18': 'dieciocho',
+    '19': 'diecinueve', '20': 'veinte'
+  };
+
   // Normalize Spanish strings for speech recognition comparison
   function normalizeSpanish(str) {
     return String(str || '')
       .toLowerCase()
       .normalize('NFD')
-      .replace(/[\u0300-\u036f]/g, '') // strip accents (á -> a, ñ -> n)
+      .replace(/[\u0300-\u036f]/g, '') // strip accents
       .replace(/[¡!¿?.,;:()"']/g, ' ')
-      .replace(/\b13\b/g, 'trece')
+      .replace(/\b([0-9]|1[0-9]|20)\b/g, match => NUMBER_WORDS_ES[match] || match)
       .replace(/\s+/g, ' ')
       .trim();
   }

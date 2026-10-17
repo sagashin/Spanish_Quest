@@ -4,7 +4,6 @@
 
   const MODEL_PRESETS = [
     { id: 'gemini-3.8-flash', label: 'gemini-3.8-flash (推奨・高速)' },
-    { id: 'gemini-3.8-pro', label: 'gemini-3.8-pro (高精度)' },
     { id: 'gemini-2.5-flash', label: 'gemini-2.5-flash (互換・高速)' },
     { id: 'gemini-2.5-pro', label: 'gemini-2.5-pro (互換・高精度)' }
   ];
@@ -132,7 +131,7 @@
   }
 
   // Low-level call to Google Gemini generateContent REST endpoint
-  async function callGeminiApi({ apiKey, modelId, systemPrompt, userPrompt }) {
+  async function callGeminiApi({ apiKey, modelId, systemPrompt, userPrompt, responseSchema }) {
     const trimmedKey = String(apiKey || '').trim();
     if (!trimmedKey) {
       const err = new Error('API_KEY_MISSING');
@@ -142,6 +141,14 @@
 
     const activeModel = String(modelId || DEFAULT_MODEL).trim() || DEFAULT_MODEL;
     const url = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(activeModel)}:generateContent?key=${encodeURIComponent(trimmedKey)}`;
+
+    const generationConfig = {
+      temperature: 0.7,
+      responseMimeType: 'application/json'
+    };
+    if (responseSchema) {
+      generationConfig.responseSchema = responseSchema;
+    }
 
     const body = {
       systemInstruction: {
@@ -153,10 +160,7 @@
           parts: [{ text: userPrompt }]
         }
       ],
-      generationConfig: {
-        temperature: 0.7,
-        responseMimeType: 'application/json'
-      }
+      generationConfig
     };
 
     const res = await fetch(url, {
@@ -220,7 +224,7 @@ ${persona.personaPrompt}
   ]
 }`;
 
-    const recentTurns = (history || []).slice(-6).map(m => {
+    const recentTurns = (history || []).slice(-10).map(m => {
       const speaker = m.sender === 'ai' ? persona.name : 'ユーザー(13歳日本人少年)';
       return `${speaker}: ${m.spanish}`;
     }).join('\n');
@@ -325,3 +329,4 @@ ${userMessage}
     generateCustomPhrase
   };
 })();
+

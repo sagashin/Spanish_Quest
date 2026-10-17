@@ -27,19 +27,16 @@
   }
 
   function createInitialState() {
-    const today = getTodayStr();
     const cards = {};
     const phrases = (window.VAMOS_DATA && window.VAMOS_DATA.phrases) || [];
-    const starterIds = ['gr_1', 'sc_1', 'fd_1'];
 
     phrases.forEach(p => {
-      const isStarter = starterIds.includes(p.id);
       cards[p.id] = {
-        seen: isStarter,
-        masteryLevel: isStarter ? 1 : 0, // 0: 未習得, 1-3: 学習中, 4-5: マスター
-        nextReviewDate: isStarter ? today : null,
+        seen: false,
+        masteryLevel: 0, // 0: 未習得, 1-3: 学習中, 4-5: マスター
+        nextReviewDate: null,
         lastReviewedDate: null,
-        correctCount: isStarter ? 1 : 0,
+        correctCount: 0,
         reviewCount: 0
       };
     });
@@ -47,9 +44,9 @@
     return {
       version: 2,
       playerName: 'Leo',
-      xp: 60,
-      streak: 1,
-      lastStudyDate: today,
+      xp: 0,
+      streak: 0,
+      lastStudyDate: null,
       soundEnabled: true,
       autoSpeak: true,
       geminiApiKey: '',
@@ -62,6 +59,32 @@
     };
   }
 
+  function normalizeState(parsed) {
+    const base = createInitialState();
+    if (!parsed || typeof parsed !== 'object') return base;
+
+    const merged = {
+      ...base,
+      ...parsed,
+      geminiApiKey: typeof parsed.geminiApiKey === 'string' ? parsed.geminiApiKey : base.geminiApiKey,
+      geminiModel: parsed.geminiModel || base.geminiModel,
+      customPhrases: Array.isArray(parsed.customPhrases) ? parsed.customPhrases : [],
+      cards: { ...base.cards, ...(parsed.cards || {}) },
+      completedStages: { ...(parsed.completedStages || {}) }
+    };
+
+    const today = getTodayStr();
+    if (merged.lastStudyDate && merged.lastStudyDate !== today) {
+      const last = new Date(merged.lastStudyDate + 'T00:00:00');
+      const curr = new Date(today + 'T00:00:00');
+      const diffDays = Math.round((curr - last) / (1000 * 60 * 60 * 24));
+      if (diffDays > 1) {
+        merged.streak = 0;
+      }
+    }
+    return merged;
+  }
+
   function loadState() {
     try {
       const raw = localStorage.getItem(STORAGE_KEY) || localStorage.getItem(LEGACY_KEY);
@@ -71,27 +94,7 @@
         return init;
       }
       const parsed = JSON.parse(raw);
-      const base = createInitialState();
-      const merged = {
-        ...base,
-        ...parsed,
-        geminiApiKey: typeof parsed.geminiApiKey === 'string' ? parsed.geminiApiKey : base.geminiApiKey,
-        geminiModel: parsed.geminiModel || base.geminiModel,
-        customPhrases: Array.isArray(parsed.customPhrases) ? parsed.customPhrases : [],
-        cards: { ...base.cards, ...(parsed.cards || {}) },
-        completedStages: { ...(parsed.completedStages || {}) }
-      };
-
-      const today = getTodayStr();
-      if (merged.lastStudyDate && merged.lastStudyDate !== today) {
-        const last = new Date(merged.lastStudyDate + 'T00:00:00');
-        const curr = new Date(today + 'T00:00:00');
-        const diffDays = Math.round((curr - last) / (1000 * 60 * 60 * 24));
-        if (diffDays > 1) {
-          merged.streak = 0;
-        }
-      }
-      return merged;
+      return normalizeState(parsed);
     } catch (e) {
       return createInitialState();
     }
@@ -221,6 +224,17 @@
     });
 
     return { state: nextState, addedPhrase: newPhrase, isDuplicate: false };
+  }
+
+  function deleteCustomPhrase(state, phraseId) {
+    const nextCustom = (state.customPhrases || []).filter(p => p.id !== phraseId);
+    const nextCards = { ...(state.cards || {}) };
+    delete nextCards[phraseId];
+    return {
+      ...state,
+      customPhrases: nextCustom,
+      cards: nextCards
+    };
   }
 
   function recordQuestAnswer(state, phraseId, isCorrect) {
@@ -407,11 +421,13 @@
     addDaysStr,
     getAllPhrases,
     createInitialState,
+    normalizeState,
     loadState,
     saveState,
     touchStudyStreak,
     markPhraseSeen,
     addCustomPhrase,
+    deleteCustomPhrase,
     recordQuestAnswer,
     recordSrsReview,
     getDuePhrases,
