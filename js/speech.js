@@ -179,8 +179,25 @@
     return { isMatch, score: Math.max(score, isMatch ? 75 : score) };
   }
 
+  let activeRecognition = null;
+
   // Start Web Speech API SpeechRecognition
   function startSpeechRecognition({ onResult, onError, onEnd }) {
+    // 1. Cancel any active speech synthesis so audio session is freed for recording
+    if ('speechSynthesis' in window) {
+      try {
+        window.speechSynthesis.cancel();
+      } catch (e) {}
+    }
+
+    // 2. Abort any previous recognition instance
+    if (activeRecognition) {
+      try {
+        activeRecognition.abort();
+      } catch (e) {}
+      activeRecognition = null;
+    }
+
     const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
     if (!SpeechRec) {
       if (onError) onError('お使いのブラウザは音声認識（Web Speech API）に未対応です。「タップでクリア」を使ってね！');
@@ -191,6 +208,8 @@
       recognition.lang = 'es-ES';
       recognition.interimResults = false;
       recognition.maxAlternatives = 3;
+
+      activeRecognition = recognition;
 
       recognition.onresult = (event) => {
         const alternatives = [];
@@ -204,10 +223,10 @@
         let msg = 'うまく聞き取れませんでした。もう一度マイクを押すか「タップでクリア」を使ってね！';
         if (event.error === 'not-allowed' || event.error === 'service-not-allowed') {
           msg = '⚠️ マイクの利用が許可されていません。ブラウザのアドレスバー横の設定（またはスマホ本体の設定）でマイクを「許可」にしてください。';
+        } else if (event.error === 'audio-capture') {
+          msg = '⚠️ マイク機器が見つかりませんでした。イヤホン（AirPods等）の接続解除やブラウザ再読み込みをお試しください。「タップでクリア」でも進めます！';
         } else if (event.error === 'no-speech') {
           msg = '🎙️ 声が聞き取れませんでした。マイクに近づいてはっきり話してみてね！（iPhoneは設定→一般→キーボードの「音声入力を有効」も確認してね）';
-        } else if (event.error === 'audio-capture') {
-          msg = '⚠️ マイク機器が見つかりませんでした。通話中や他アプリでマイクを使用していないか確認してね！';
         } else if (event.error === 'network') {
           msg = '📡 音声認識サーバーとの通信エラーが発生しました。通信環境の良いところで試してみてね！';
         }
@@ -215,12 +234,14 @@
       };
 
       recognition.onend = () => {
+        activeRecognition = null;
         if (onEnd) onEnd();
       };
 
       recognition.start();
       return recognition;
     } catch (err) {
+      activeRecognition = null;
       if (onError) onError('音声認識を開始できませんでした。「タップでクリア」を使ってね！');
       return null;
     }
