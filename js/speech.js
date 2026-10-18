@@ -203,7 +203,13 @@
       recognition.onerror = (event) => {
         let msg = 'うまく聞き取れませんでした。もう一度マイクを押すか「タップでクリア」を使ってね！';
         if (event.error === 'not-allowed' || event.error === 'service-not-allowed') {
-          msg = 'マイクの許可がオフになっています。「タップで発音クリア」ボタンで進めるよ！';
+          msg = '⚠️ マイクの利用が許可されていません。ブラウザのアドレスバー横の設定（またはスマホ本体の設定）でマイクを「許可」にしてください。';
+        } else if (event.error === 'no-speech') {
+          msg = '🎙️ 声が聞き取れませんでした。マイクに近づいてはっきり話してみてね！（iPhoneは設定→一般→キーボードの「音声入力を有効」も確認してね）';
+        } else if (event.error === 'audio-capture') {
+          msg = '⚠️ マイク機器が見つかりませんでした。通話中や他アプリでマイクを使用していないか確認してね！';
+        } else if (event.error === 'network') {
+          msg = '📡 音声認識サーバーとの通信エラーが発生しました。通信環境の良いところで試してみてね！';
         }
         if (onError) onError(msg);
       };
