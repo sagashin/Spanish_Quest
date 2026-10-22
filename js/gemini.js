@@ -3,9 +3,9 @@
   const DEFAULT_MODEL = 'gemini-3.8-flash';
 
   const MODEL_PRESETS = [
-    { id: 'gemini-3.8-flash', label: 'gemini-3.8-flash (推奨・高速)' },
-    { id: 'gemini-2.5-flash', label: 'gemini-2.5-flash (互換・高速)' },
-    { id: 'gemini-2.5-pro', label: 'gemini-2.5-pro (互換・高精度)' }
+    { id: 'gemini-3.8-flash', label: 'gemini-3.8-flash (推奨・最新)' },
+    { id: 'gemini-3.5-flash', label: 'gemini-3.5-flash (高速・安定)' },
+    { id: 'gemini-3.5-flash-lite', label: 'gemini-3.5-flash-lite (最速・軽量)' }
   ];
 
   const ROLEPLAY_PERSONAS = [
@@ -139,8 +139,14 @@
       throw err;
     }
 
-    const activeModel = String(modelId || DEFAULT_MODEL).trim() || DEFAULT_MODEL;
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(activeModel)}:generateContent?key=${encodeURIComponent(trimmedKey)}`;
+    const primaryModel = String(modelId || DEFAULT_MODEL).trim() || DEFAULT_MODEL;
+    // フォールバック候補リスト（指定モデル -> 3.8-flash -> 3.5-flash -> 3.5-flash-lite）
+    const candidateModels = Array.from(new Set([
+      primaryModel,
+      'gemini-3.8-flash',
+      'gemini-3.5-flash',
+      'gemini-3.5-flash-lite'
+    ]));
 
     const generationConfig = {
       temperature: 0.7,
@@ -163,31 +169,50 @@
       generationConfig
     };
 
-    const res = await fetch(url, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify(body)
-    });
-
-    if (!res.ok) {
-      let errDetail = '';
+    let lastError = null;
+    for (const targetModel of candidateModels) {
       try {
-        const errJson = await res.json();
-        errDetail = errJson?.error?.message || JSON.stringify(errJson);
-      } catch (_) {
-        errDetail = await res.text();
+        const url = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(targetModel)}:generateContent?key=${encodeURIComponent(trimmedKey)}`;
+        const res = await fetch(url, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(body)
+        });
+
+        if (res.ok) {
+          const data = await res.json();
+          const textOutput = data?.candidates?.[0]?.content?.parts
+            ?.map(p => p.text || '')
+            .join('\n') || '';
+
+          return safeParseJson(textOutput);
+        }
+
+        let errDetail = '';
+        try {
+          const errJson = await res.json();
+          errDetail = errJson?.error?.message || JSON.stringify(errJson);
+        } catch (_) {
+          errDetail = await res.text();
+        }
+
+        lastError = new Error(`Gemini API エラー (${res.status} [${targetModel}]): ${errDetail || 'モデル名またはAPIキーを確認してください'}`);
+        // 404（モデル見つからない）や400/403のモデル非対応エラー等は次モデルへフォールバック
+        if (res.status === 404 || res.status === 403 || res.status === 429) {
+          console.warn(`Gemini model ${targetModel} failed (${res.status}), trying fallback...`);
+          continue;
+        } else {
+          break;
+        }
+      } catch (err) {
+        lastError = err;
+        console.warn(`Gemini model ${targetModel} network error, trying fallback...`, err);
       }
-      throw new Error(`Gemini API エラー (${res.status}): ${errDetail || 'モデル名またはAPIキーを確認してください（設定画面で変更可能）'}`);
     }
 
-    const data = await res.json();
-    const textOutput = data?.candidates?.[0]?.content?.parts
-      ?.map(p => p.text || '')
-      .join('\n') || '';
-
-    return safeParseJson(textOutput);
+    throw lastError || new Error('すべてのGeminiモデル候補で通信に失敗しました。');
   }
 
   // Feature 1: Infinite Free Roleplay Chat Turn
